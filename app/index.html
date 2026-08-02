@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shasta for Windows 10 Mobile</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: -apple-system, Segoe UI, system-ui, sans-serif;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+    line-height: 1.5;
+  }
+  h1 { margin-bottom: 4px; }
+  .tagline { opacity: 0.7; margin-top: 0; }
+  .card {
+    border: 1px solid rgba(128,128,128,0.35);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+  }
+  .step-num {
+    display: inline-block;
+    min-width: 1.5em;
+    font-weight: 600;
+    opacity: 0.6;
+  }
+  a.button {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 6px;
+    background: #2d3447;
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 8px;
+  }
+  code { background: rgba(128,128,128,0.15); padding: 2px 6px; border-radius: 4px; }
+</style>
+</head>
+<body>
+  <h1>Shasta</h1>
+  <p class="tagline">An Audiobookshelf client for Windows 10 Mobile.</p>
+
+  <p>
+    Shasta is sideloaded, not distributed through the Microsoft Store — it's signed
+    with a self-signed certificate instead of a paid developer account. That means
+    two downloads and one one-time setup step on the phone.
+  </p>
+
+  <div class="card">
+    <p><span class="step-num">1</span> On the phone: <strong>Settings → Update &amp; security → For developers</strong>, turn on <strong>Developer Mode</strong>.</p>
+  </div>
+
+  <div class="card">
+    <p><span class="step-num">2</span> Download and open the certificate. Only needed once per device.</p>
+    <a class="button" href="shasta-mobile-public-cert.cer">Download certificate (.cer)</a>
+  </div>
+
+  <div class="card">
+    <p><span class="step-num">3</span> Download and open the app package to install.</p>
+    <a class="button" href="app.appxbundle">Download Shasta (.appxbundle)</a>
+  </div>
+
+  <p>
+    If Windows warns about an untrusted publisher, install the certificate from
+    step 2 first, then try the app package again.
+  </p>
+
+  <p>
+    Already have Shasta installed? It checks <code>version.json</code> from
+    Settings → Advanced to tell you when a new build is here — no need to
+    revisit this page for every update.
+  </p>
+
+  <hr style="margin-top:48px; opacity:0.3">
+  <p style="opacity:0.6; font-size:0.9em;">
+    Shasta is an unofficial, third-party client for
+    <a href="https://www.audiobookshelf.org/">Audiobookshelf</a>. Source:
+    <a href="https://github.com/ro2342/shasta/tree/main/windows-mobile/Shasta">ro2342/shasta</a>.
+  </p>
+</body>
+</html>
