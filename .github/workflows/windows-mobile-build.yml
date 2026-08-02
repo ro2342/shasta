@@ -78,6 +78,41 @@ jobs:
             /p:AppxPackageDir=%CD%\AppPackages\ ^
             /verbosity:minimal
 
+      # TEMPORARY diagnostic step — investigating why the built .appxbundle
+      # has no ARM (32-bit) framework redistributables (only ARM64/x64/x86)
+      # even though the app targets Platform=ARM. Lists every .appx found
+      # anywhere in the restored NuGet package cache whose path mentions
+      # "arm" but not "arm64", plus the full folder layout of the specific
+      # NuGet packages that provide these redistributables. Remove once
+      # resolved.
+      - name: Diagnose ARM framework redistributable availability
+        shell: pwsh
+        run: |
+          Write-Host "=== .appx files anywhere in the NuGet cache matching ARM (not ARM64) ==="
+          Get-ChildItem "$env:USERPROFILE\.nuget\packages" -Recurse -Filter "*.appx" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "(?i)\barm\b" -and $_.FullName -notmatch "(?i)arm64" } |
+            ForEach-Object { Write-Host $_.FullName }
+
+          Write-Host ""
+          Write-Host "=== Folder layout of relevant NuGet packages ==="
+          $packageNames = @("microsoft.net.corerforuntime.1.1", "microsoft.net.native.compiler", "microsoft.net.native.framework.1.7", "microsoft.net.native.runtime.1.7", "microsoft.netcore.universalwindowsplatform")
+          foreach ($name in $packageNames) {
+            $path = "$env:USERPROFILE\.nuget\packages\$name"
+            if (Test-Path $path) {
+              Write-Host "--- $name ---"
+              Get-ChildItem $path -Recurse -Directory | ForEach-Object { Write-Host $_.FullName }
+            } else {
+              Write-Host "--- $name: not found in NuGet cache ---"
+            }
+          }
+
+          Write-Host ""
+          Write-Host "=== Everything actually under AppPackages/*/Dependencies ==="
+          Get-ChildItem -Path AppPackages -Recurse -Directory -Filter "Dependencies" -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host $_.FullName
+            Get-ChildItem $_.FullName -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
+          }
+
       - name: Publish the appxbundle as a workflow artifact
         uses: actions/upload-artifact@v4
         with:
