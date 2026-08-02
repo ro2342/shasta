@@ -25,6 +25,11 @@ src-tauri/WixTools/
 *.pfx
 *.p12
 .env
+# Exception: Shasta's UWP sideload cert is intentionally committed — see
+# wp-apps/07-build-e-ci-cd.md. It's a throwaway self-signed cert whose only
+# job is a consistent app identity across CI builds for personal sideload
+# distribution, not a real secret worth protecting.
+!windows-mobile/Shasta/Shasta_TemporaryKey.pfx
 # Server addresses / API tokens kept locally for testing — never commit.
 # (Covers the root testing-tokens file and the login prototype's tokens.jsx.)
 Skald API Tokens.txt
