@@ -113,14 +113,16 @@ jobs:
           }
 
           Write-Host ""
-          Write-Host "=== Full-drive search for Microsoft.NET.Native.Framework*.appx (may take a bit) ==="
-          Get-ChildItem "C:\" -Recurse -Filter "Microsoft.NET.Native.Framework*.appx" -ErrorAction SilentlyContinue -Force |
+          Write-Host "=== Targeted search under UWPNuGetPackages for ARM (not ARM64) redistributables ==="
+          $sdkRoot = "${env:ProgramFiles(x86)}\Microsoft SDKs\UWPNuGetPackages"
+          Get-ChildItem $sdkRoot -Recurse -Filter "*.appx" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "(?i)[\\\-]arm[\\\-.]" -and $_.FullName -notmatch "(?i)arm64" -and $_.FullName -notmatch "(?i)\.debug\." } |
             ForEach-Object { Write-Host $_.FullName }
 
           Write-Host ""
-          Write-Host "=== Full-drive search for any *ARM*.appx (excluding ARM64) ==="
-          Get-ChildItem "C:\" -Recurse -Filter "*ARM*.appx" -ErrorAction SilentlyContinue -Force |
-            Where-Object { $_.FullName -notmatch "(?i)arm64" } |
+          Write-Host "=== Same search including VCLibs specifically (any location under Microsoft SDKs) ==="
+          Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft SDKs" -Recurse -Filter "Microsoft.VCLibs*.appx" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "(?i)[\\\-]arm[\\\-.]" -and $_.FullName -notmatch "(?i)arm64" } |
             ForEach-Object { Write-Host $_.FullName }
 
       - name: Publish the appxbundle as a workflow artifact
