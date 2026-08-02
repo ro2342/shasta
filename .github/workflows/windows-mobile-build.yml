@@ -102,7 +102,7 @@ jobs:
               Write-Host "--- $name ---"
               Get-ChildItem $path -Recurse -Directory | ForEach-Object { Write-Host $_.FullName }
             } else {
-              Write-Host "--- $name: not found in NuGet cache ---"
+              Write-Host "--- ${name}: not found in NuGet cache ---"
             }
           }
 
