@@ -85,6 +85,8 @@ jobs:
           }
           New-Item -ItemType Directory -Force -Path app | Out-Null
           Copy-Item $bundle.FullName -Destination "app/app.appxbundle" -Force
+          Copy-Item "windows-mobile/Shasta/download-page/index.html" -Destination "app/index.html" -Force
+          Copy-Item "windows-mobile/Shasta/shasta-mobile-public-cert.cer" -Destination "app/shasta-mobile-public-cert.cer" -Force
 
           [xml]$manifest = Get-Content "windows-mobile/Shasta/Package.appxmanifest"
           $version = $manifest.Package.Identity.Version
@@ -94,12 +96,12 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/app.appxbundle app/version.json
-          git diff --cached --quiet -- app/app.appxbundle app/version.json
+          git add app/app.appxbundle app/version.json app/index.html app/shasta-mobile-public-cert.cer
+          git diff --cached --quiet -- app/app.appxbundle app/version.json app/index.html app/shasta-mobile-public-cert.cer
           if ($LASTEXITCODE -eq 0) {
-            Write-Host "app.appxbundle and version.json are already up to date, nothing to commit."
+            Write-Host "app/ contents are already up to date, nothing to commit."
           } else {
-            git commit -m "chore: update app/app.appxbundle and app/version.json (automated)"
+            git commit -m "chore: update app/ download page contents (automated)"
             git push
           }
 

@@ -1,10 +1,13 @@
 name: Windows Mobile - Generate Signing Certificate
 
 # Manual, one-time setup step for the Shasta Windows 10 Mobile app (see
-# windows-mobile/Shasta/). Generates a self-signed sideload certificate,
-# commits the private key (.pfx) back into windows-mobile/Shasta/ for every
-# future build to use, and publishes the public key (.cer) as a workflow
-# artifact for installing once on a phone that will sideload the app.
+# windows-mobile/Shasta/). Generates a self-signed sideload certificate and
+# commits BOTH the private key (.pfx, used by every future build) and the
+# public key (.cer, linked from the download page so a phone can install
+# it once before sideloading the app) back into windows-mobile/Shasta/.
+# The .cer is also uploaded as a workflow artifact for convenience, but the
+# committed copy is what the download page actually links to — Actions
+# artifacts expire after 90 days, not suitable for a permanent link.
 #
 # Does NOT run on push — only via the "Run workflow" button on the Actions
 # tab. Re-running this replaces the existing cert; every previously-built
@@ -30,7 +33,7 @@ jobs:
           # Subject (CN=...) must match Package.appxmanifest's
           # Identity/@Publisher exactly, char for char.
           $pfxPath = "windows-mobile/Shasta/Shasta_TemporaryKey.pfx"
-          $cerPath = "shasta-mobile-public-cert.cer"
+          $cerPath = "windows-mobile/Shasta/shasta-mobile-public-cert.cer"
           $password = "U0PY2fbJGA8VjQqSi7mZgXwOvsIT"
 
           $cert = New-SelfSignedCertificate `
@@ -51,13 +54,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: shasta-mobile-public-cert
-          path: shasta-mobile-public-cert.cer
+          path: windows-mobile/Shasta/shasta-mobile-public-cert.cer
 
-      - name: Commit the private key (.pfx) back into the repository
+      - name: Commit the certificate pair back into the repository
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add windows-mobile/Shasta/Shasta_TemporaryKey.pfx
+          git add windows-mobile/Shasta/Shasta_TemporaryKey.pfx windows-mobile/Shasta/shasta-mobile-public-cert.cer
           git commit -m "chore: generate Shasta mobile sideload signing certificate (automated)" || echo "nothing to commit"
           git push
