@@ -120,10 +120,13 @@ jobs:
             ForEach-Object { Write-Host $_.FullName }
 
           Write-Host ""
-          Write-Host "=== Same search including VCLibs specifically (any location under Microsoft SDKs) ==="
-          Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft SDKs" -Recurse -Filter "Microsoft.VCLibs*.appx" -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match "(?i)[\\\-]arm[\\\-.]" -and $_.FullName -notmatch "(?i)arm64" } |
-            ForEach-Object { Write-Host $_.FullName }
+          Write-Host "=== VCLibs ExtensionSDK folder listing (standard install location) ==="
+          $vclibsRoot = "${env:ProgramFiles(x86)}\Windows Kits\10\ExtensionSDKs\Microsoft.VCLibs"
+          if (Test-Path $vclibsRoot) {
+            Get-ChildItem $vclibsRoot -Recurse -Filter "*.appx" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+          } else {
+            Write-Host "not found at $vclibsRoot"
+          }
 
       - name: Publish the appxbundle as a workflow artifact
         uses: actions/upload-artifact@v4
