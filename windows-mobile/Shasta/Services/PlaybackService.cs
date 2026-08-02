@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Shasta.Models;
+// Windows.Media.Core also defines an AudioTrack type (a track within a
+// MediaSource) — alias ours explicitly so the two don't collide.
+using AudioTrack = Shasta.Models.AudioTrack;
 using Windows.Media;
 using Windows.Media.Core;
 using Windows.Media.Playback;
