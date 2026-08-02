@@ -88,30 +88,40 @@ jobs:
       - name: Diagnose ARM framework redistributable availability
         shell: pwsh
         run: |
-          Write-Host "=== .appx files anywhere in the NuGet cache matching ARM (not ARM64) ==="
-          Get-ChildItem "$env:USERPROFILE\.nuget\packages" -Recurse -Filter "*.appx" -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match "(?i)\barm\b" -and $_.FullName -notmatch "(?i)arm64" } |
-            ForEach-Object { Write-Host $_.FullName }
+          Write-Host "=== Resolved package paths from the generated nuget.g.props ==="
+          $propsPath = "windows-mobile\Shasta\obj\Shasta.csproj.nuget.g.props"
+          if (Test-Path $propsPath) {
+            Get-Content $propsPath | Select-String -Pattern "Pkg|PackageFolder" | ForEach-Object { Write-Host $_.Line }
+          } else {
+            Write-Host "not found at $propsPath"
+          }
 
           Write-Host ""
-          Write-Host "=== Folder layout of relevant NuGet packages ==="
-          $packageNames = @("microsoft.net.corerforuntime.1.1", "microsoft.net.native.compiler", "microsoft.net.native.framework.1.7", "microsoft.net.native.runtime.1.7", "microsoft.netcore.universalwindowsplatform")
-          foreach ($name in $packageNames) {
-            $path = "$env:USERPROFILE\.nuget\packages\$name"
-            if (Test-Path $path) {
-              Write-Host "--- $name ---"
-              Get-ChildItem $path -Recurse -Directory | ForEach-Object { Write-Host $_.FullName }
+          Write-Host "=== Candidate legacy SDK/NuGet package roots that exist on this runner ==="
+          $candidateRoots = @(
+            "${env:ProgramFiles(x86)}\Microsoft SDKs\NuGetPackages",
+            "${env:ProgramFiles(x86)}\Microsoft SDKs\UWPNuGetPackages",
+            "$env:USERPROFILE\.nuget\packages",
+            "C:\ProgramData\Microsoft\NuGet"
+          )
+          foreach ($root in $candidateRoots) {
+            if (Test-Path $root) {
+              Write-Host "EXISTS: $root"
             } else {
-              Write-Host "--- ${name}: not found in NuGet cache ---"
+              Write-Host "missing: $root"
             }
           }
 
           Write-Host ""
-          Write-Host "=== Everything actually under AppPackages/*/Dependencies ==="
-          Get-ChildItem -Path AppPackages -Recurse -Directory -Filter "Dependencies" -ErrorAction SilentlyContinue | ForEach-Object {
-            Write-Host $_.FullName
-            Get-ChildItem $_.FullName -Recurse | ForEach-Object { Write-Host "  $($_.FullName)" }
-          }
+          Write-Host "=== Full-drive search for Microsoft.NET.Native.Framework*.appx (may take a bit) ==="
+          Get-ChildItem "C:\" -Recurse -Filter "Microsoft.NET.Native.Framework*.appx" -ErrorAction SilentlyContinue -Force |
+            ForEach-Object { Write-Host $_.FullName }
+
+          Write-Host ""
+          Write-Host "=== Full-drive search for any *ARM*.appx (excluding ARM64) ==="
+          Get-ChildItem "C:\" -Recurse -Filter "*ARM*.appx" -ErrorAction SilentlyContinue -Force |
+            Where-Object { $_.FullName -notmatch "(?i)arm64" } |
+            ForEach-Object { Write-Host $_.FullName }
 
       - name: Publish the appxbundle as a workflow artifact
         uses: actions/upload-artifact@v4
