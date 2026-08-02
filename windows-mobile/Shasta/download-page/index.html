@@ -46,8 +46,10 @@
 
   <p>
     Shasta is sideloaded, not distributed through the Microsoft Store — it's signed
-    with a self-signed certificate instead of a paid developer account. That means
-    two downloads and one one-time setup step on the phone.
+    with a self-signed certificate instead of a paid developer account, and it's
+    compiled ahead-of-time (.NET Native) rather than relying on a runtime that
+    modern build tooling no longer ships for 32-bit ARM phones. That means a few
+    downloads, but only two of them are one-time setup.
   </p>
 
   <div class="card">
@@ -60,13 +62,23 @@
   </div>
 
   <div class="card">
-    <p><span class="step-num">3</span> Download and open the app package to install.</p>
+    <p><span class="step-num">3</span> Download and open these two framework packages, in order. Also only needed once per device — Windows Phone Store apps rarely needed them, so most phones won't have them yet even if otherwise well-used.</p>
+    <a class="button" href="microsoft-net-native-framework-arm.appx">Download .NET Native Framework (.appx)</a><br>
+    <a class="button" href="microsoft-net-native-runtime-arm.appx">Download .NET Native Runtime (.appx)</a>
+  </div>
+
+  <div class="card">
+    <p><span class="step-num">4</span> Download and open the app package to install.</p>
     <a class="button" href="app.appxbundle">Download Shasta (.appxbundle)</a>
   </div>
 
   <p>
     If Windows warns about an untrusted publisher, install the certificate from
-    step 2 first, then try the app package again.
+    step 2 first, then try again. If the app installs but closes immediately
+    without ever showing its splash screen, step 3 wasn't completed. If it
+    still fails after all four steps, your phone may also be missing
+    <strong>Microsoft.VCLibs.140.00</strong> — much less common, since it's a
+    widely-used component, but not impossible on a lightly-used device.
   </p>
 
   <p>

@@ -8,17 +8,29 @@ name: Windows Mobile - Build appxbundle
 #
 # Release + .NET Native, not Debug — confirmed by inspecting a real built
 # .appxbundle: a Debug/JIT build declares a hard dependency on
-# Microsoft.NET.CoreRuntime.1.1, and the modern Windows SDK on this runner
-# only carries that framework's redistributable for ARM64/x64/x86 — there
-# is no ARM (32-bit) copy anymore, which is what the actual Lumia target
-# needs. Result: the package can never resolve its dependency and Windows
-# refuses to activate it at all — not even the splash screen renders,
-# since that never gets a chance to run. .NET Native AOT-compiles the app
-# instead, dropping the CoreRuntime dependency entirely (only VCLibs
-# remains, which real Windows 10 Mobile devices already carry). The
-# App.xaml.cs global exception handler stays in place as a mitigation for
-# .NET Native's own known (separate) failure mode — silent AOT bugs in
-# code patterns that work fine under JIT.
+# Microsoft.NET.CoreRuntime.1.1, and MSBuild's automatic Dependencies-
+# folder packaging on this runner only bundles that framework's
+# redistributable for ARM64/x64/x86 — never plain ARM (32-bit), which is
+# what the actual Lumia target needs. Release+.NET Native drops that
+# specific dependency, but still needs Microsoft.NET.Native.Framework.1.7
+# and Microsoft.NET.Native.Runtime.1.7, and MSBuild's auto-packaging has
+# the exact same ARM gap for those too — even though the files themselves
+# genuinely exist on the runner (confirmed by direct filesystem search),
+# just at a legacy path
+# (Microsoft SDKs\UWPNuGetPackages\...\arm\...) that the packaging step
+# doesn't seem to consult for the ARM platform specifically. So this
+# workflow copies them onto the download page manually, as one-time
+# installs alongside the certificate — see the "Publish" step below and
+# download-page/index.html. VCLibs.140.00 is also a declared dependency
+# but is NOT bundled this way: real Windows 10 Mobile devices almost
+# certainly already have it (it's used by countless built-in/Store apps),
+# unlike a disposable CI VM which starts with nothing — if a device
+# somehow lacks it, that would surface as a distinct install-time error
+# naming VCLibs specifically, not the silent "no splash screen" crash
+# this whole investigation was about. The App.xaml.cs global exception
+# handler stays in place as a mitigation for .NET Native's own known
+# (separate) failure mode — silent AOT bugs in code patterns that work
+# fine under JIT.
 
 on:
   push:
@@ -78,56 +90,6 @@ jobs:
             /p:AppxPackageDir=%CD%\AppPackages\ ^
             /verbosity:minimal
 
-      # TEMPORARY diagnostic step — investigating why the built .appxbundle
-      # has no ARM (32-bit) framework redistributables (only ARM64/x64/x86)
-      # even though the app targets Platform=ARM. Lists every .appx found
-      # anywhere in the restored NuGet package cache whose path mentions
-      # "arm" but not "arm64", plus the full folder layout of the specific
-      # NuGet packages that provide these redistributables. Remove once
-      # resolved.
-      - name: Diagnose ARM framework redistributable availability
-        shell: pwsh
-        run: |
-          Write-Host "=== Resolved package paths from the generated nuget.g.props ==="
-          $propsPath = "windows-mobile\Shasta\obj\Shasta.csproj.nuget.g.props"
-          if (Test-Path $propsPath) {
-            Get-Content $propsPath | Select-String -Pattern "Pkg|PackageFolder" | ForEach-Object { Write-Host $_.Line }
-          } else {
-            Write-Host "not found at $propsPath"
-          }
-
-          Write-Host ""
-          Write-Host "=== Candidate legacy SDK/NuGet package roots that exist on this runner ==="
-          $candidateRoots = @(
-            "${env:ProgramFiles(x86)}\Microsoft SDKs\NuGetPackages",
-            "${env:ProgramFiles(x86)}\Microsoft SDKs\UWPNuGetPackages",
-            "$env:USERPROFILE\.nuget\packages",
-            "C:\ProgramData\Microsoft\NuGet"
-          )
-          foreach ($root in $candidateRoots) {
-            if (Test-Path $root) {
-              Write-Host "EXISTS: $root"
-            } else {
-              Write-Host "missing: $root"
-            }
-          }
-
-          Write-Host ""
-          Write-Host "=== Targeted search under UWPNuGetPackages for ARM (not ARM64) redistributables ==="
-          $sdkRoot = "${env:ProgramFiles(x86)}\Microsoft SDKs\UWPNuGetPackages"
-          Get-ChildItem $sdkRoot -Recurse -Filter "*.appx" -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match "(?i)[\\\-]arm[\\\-.]" -and $_.FullName -notmatch "(?i)arm64" -and $_.FullName -notmatch "(?i)\.debug\." } |
-            ForEach-Object { Write-Host $_.FullName }
-
-          Write-Host ""
-          Write-Host "=== Any UWPNuGetPackages folder whose NAME mentions vclibs ==="
-          Get-ChildItem "${env:ProgramFiles(x86)}\Microsoft SDKs\UWPNuGetPackages" -Directory -ErrorAction SilentlyContinue |
-            Where-Object { $_.Name -match "(?i)vclibs" } |
-            ForEach-Object {
-              Write-Host "--- $($_.FullName) ---"
-              Get-ChildItem $_.FullName -Recurse -Filter "*.appx" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
-            }
-
       - name: Publish the appxbundle as a workflow artifact
         uses: actions/upload-artifact@v4
         with:
@@ -148,6 +110,35 @@ jobs:
           Copy-Item "windows-mobile/Shasta/download-page/index.html" -Destination "app/index.html" -Force
           Copy-Item "windows-mobile/Shasta/shasta-mobile-public-cert.cer" -Destination "app/shasta-mobile-public-cert.cer" -Force
 
+          # ARM (32-bit) .NET Native framework redistributables — MSBuild's
+          # own Dependencies-folder packaging skips these for the ARM
+          # platform (see the workflow header comment), so they're copied
+          # onto the download page directly from where they actually live
+          # on this runner. Searched dynamically rather than hardcoded to
+          # a specific SDK package version/path, since that will drift as
+          # GitHub updates the windows-latest runner image over time —
+          # whatever version is actually installed right now is what gets
+          # used. Fails loudly if nothing matches at all, rather than
+          # silently shipping a download page missing a required install
+          # step.
+          $sdkRoot = "${env:ProgramFiles(x86)}\Microsoft SDKs\UWPNuGetPackages"
+          $frameworkArm = Get-ChildItem $sdkRoot -Recurse -Filter "Microsoft.NET.Native.Framework.*.appx" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "(?i)[\\-]arm[\\-.]" -and $_.FullName -notmatch "(?i)arm64" -and $_.FullName -notmatch "(?i)\.debug\." } |
+            Select-Object -First 1
+          $runtimeArm = Get-ChildItem $sdkRoot -Recurse -Filter "Microsoft.NET.Native.Runtime.*.appx" -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "(?i)[\\-]arm[\\-.]" -and $_.FullName -notmatch "(?i)arm64" -and $_.FullName -notmatch "(?i)\.debug\." } |
+            Select-Object -First 1
+          if (-not $frameworkArm) {
+            Write-Error "No ARM Microsoft.NET.Native.Framework*.appx found anywhere under $sdkRoot. See wp-apps/07-build-e-ci-cd.md's ARM framework redistributable section for how to re-diagnose this."
+            exit 1
+          }
+          if (-not $runtimeArm) {
+            Write-Error "No ARM Microsoft.NET.Native.Runtime*.appx found anywhere under $sdkRoot. See wp-apps/07-build-e-ci-cd.md's ARM framework redistributable section for how to re-diagnose this."
+            exit 1
+          }
+          Copy-Item $frameworkArm.FullName -Destination "app/microsoft-net-native-framework-arm.appx" -Force
+          Copy-Item $runtimeArm.FullName -Destination "app/microsoft-net-native-runtime-arm.appx" -Force
+
           [xml]$manifest = Get-Content "windows-mobile/Shasta/Package.appxmanifest"
           $version = $manifest.Package.Identity.Version
           $builtAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -156,8 +147,8 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add app/app.appxbundle app/version.json app/index.html app/shasta-mobile-public-cert.cer
-          git diff --cached --quiet -- app/app.appxbundle app/version.json app/index.html app/shasta-mobile-public-cert.cer
+          git add app/app.appxbundle app/version.json app/index.html app/shasta-mobile-public-cert.cer app/microsoft-net-native-framework-arm.appx app/microsoft-net-native-runtime-arm.appx
+          git diff --cached --quiet -- app/app.appxbundle app/version.json app/index.html app/shasta-mobile-public-cert.cer app/microsoft-net-native-framework-arm.appx app/microsoft-net-native-runtime-arm.appx
           if ($LASTEXITCODE -eq 0) {
             Write-Host "app/ contents are already up to date, nothing to commit."
           } else {
