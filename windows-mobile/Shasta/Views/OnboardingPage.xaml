@@ -24,9 +24,9 @@
                      TextChanged="ServerUrlBox_TextChanged"
                      Margin="0,0,0,4" />
             <TextBlock x:Name="HttpWarningText"
-                       Text="This address is not encrypted (http). Your password will be sent unprotected over the network."
+                       Text="⚠ This address is not encrypted (http). Your password will be sent unprotected over the network."
                        Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlErrorTextForegroundBrush}"
+                       FontWeight="SemiBold"
                        TextWrapping="Wrap"
                        Visibility="Collapsed"
                        Margin="0,0,0,20" />
@@ -58,7 +58,7 @@
 
             <TextBlock x:Name="StatusText"
                        Style="{StaticResource CaptionTextBlockStyle}"
-                       Foreground="{ThemeResource SystemControlErrorTextForegroundBrush}"
+                       FontWeight="SemiBold"
                        TextWrapping="Wrap"
                        Visibility="Collapsed"
                        Margin="0,0,0,16" />
