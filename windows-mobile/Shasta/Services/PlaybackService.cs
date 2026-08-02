@@ -29,7 +29,14 @@ namespace Shasta.Services
     // pattern MainPage already uses for UISettings.ColorValuesChanged.
     public static class PlaybackService
     {
-        private static readonly MediaPlayer _player = CreatePlayer();
+        // Deliberately NOT a static-readonly-with-eager-initializer field.
+        // Constructing MediaPlayer touches SystemMediaTransportControls,
+        // which claims a real OS media session — doing that as a class
+        // load side effect (i.e. the instant anything references
+        // PlaybackService, even just to subscribe to StateChanged) risks
+        // running before the app window is fully activated. Lazy-built on
+        // first actual playback use instead, via GetOrCreatePlayer().
+        private static MediaPlayer _player;
         private static MediaPlaybackList _playbackList;
         private static List<AudioTrack> _tracks = new List<AudioTrack>();
         private static DispatcherTimer _syncTimer;
@@ -42,14 +49,18 @@ namespace Shasta.Services
         public static PlaySession CurrentSession { get; private set; }
 
         public static bool HasActiveItem => CurrentItem != null;
-        public static bool IsPlaying => _player.PlaybackSession?.PlaybackState == MediaPlaybackState.Playing;
-        public static double PlaybackRate => _player.PlaybackSession?.PlaybackRate ?? 1.0;
+
+        // These read-only status checks use the possibly-null field
+        // directly (never GetOrCreatePlayer()) — checking "is anything
+        // playing" must never itself be what constructs a MediaPlayer.
+        public static bool IsPlaying => _player?.PlaybackSession?.PlaybackState == MediaPlaybackState.Playing;
+        public static double PlaybackRate => _player?.PlaybackSession?.PlaybackRate ?? 1.0;
 
         public static double PositionSeconds
         {
             get
             {
-                if (_playbackList == null || _player.PlaybackSession == null)
+                if (_playbackList == null || _player?.PlaybackSession == null)
                 {
                     return 0;
                 }
@@ -71,6 +82,7 @@ namespace Shasta.Services
                 await StopAsync();
             }
 
+            MediaPlayer player = GetOrCreatePlayer();
             CurrentItem = item;
             CurrentSession = await ProgressService.StartSessionAsync(item.Id);
             _tracks = CurrentSession.AudioTracks.OrderBy(t => t.Index).ToList();
@@ -102,12 +114,12 @@ namespace Shasta.Services
             if (offsetWithinTrack > 0.5)
             {
                 _pendingSeek = TimeSpan.FromSeconds(offsetWithinTrack);
-                _player.MediaOpened += Player_SeekOnceOpened;
+                player.MediaOpened += Player_SeekOnceOpened;
             }
 
-            UpdateTransportDisplay(item);
-            _player.Source = _playbackList;
-            _player.Play();
+            UpdateTransportDisplay(player, item);
+            player.Source = _playbackList;
+            player.Play();
             StartSyncTimer();
             RaiseStateChanged();
         }
@@ -122,13 +134,25 @@ namespace Shasta.Services
             }
         }
 
-        public static void Pause() => _player.Pause();
+        // Pause/Resume/SeekTo/SetPlaybackRate are only ever invoked from UI
+        // that's already showing an active session (PlayerPage, the mini-
+        // player, SMTC transport buttons) — by the time any of these run,
+        // _player is already non-null. GetOrCreatePlayer() is still used
+        // rather than the bare field so a stray call is harmless instead
+        // of a NullReferenceException, without reintroducing eager
+        // construction anywhere near app startup.
+        public static void Pause() => GetOrCreatePlayer().Pause();
 
-        public static void Resume() => _player.Play();
+        public static void Resume() => GetOrCreatePlayer().Play();
 
         public static void SeekTo(TimeSpan overallPosition)
         {
-            if (_playbackList == null || _player.PlaybackSession == null)
+            if (_playbackList == null)
+            {
+                return;
+            }
+            MediaPlayer player = GetOrCreatePlayer();
+            if (player.PlaybackSession == null)
             {
                 return;
             }
@@ -139,7 +163,7 @@ namespace Shasta.Services
                 _playbackList.MoveTo((uint)index);
             }
             double offsetWithinTrack = target - (index < _tracks.Count ? _tracks[index].StartOffset : 0);
-            _player.PlaybackSession.Position = TimeSpan.FromSeconds(Math.Max(0, offsetWithinTrack));
+            player.PlaybackSession.Position = TimeSpan.FromSeconds(Math.Max(0, offsetWithinTrack));
             RaiseStateChanged();
         }
 
@@ -151,9 +175,10 @@ namespace Shasta.Services
 
         public static void SetPlaybackRate(double rate)
         {
-            if (_player.PlaybackSession != null)
+            MediaPlayer player = GetOrCreatePlayer();
+            if (player.PlaybackSession != null)
             {
-                _player.PlaybackSession.PlaybackRate = rate;
+                player.PlaybackSession.PlaybackRate = rate;
             }
         }
 
@@ -165,8 +190,11 @@ namespace Shasta.Services
                 double elapsed = Math.Max(0, (DateTimeOffset.UtcNow - _lastSyncAtUtc).TotalSeconds);
                 await ProgressService.CloseSessionAsync(CurrentSession.Id, PositionSeconds, elapsed);
             }
-            _player.Pause();
-            _player.Source = null;
+            if (_player != null)
+            {
+                _player.Pause();
+                _player.Source = null;
+            }
             _playbackList = null;
             _tracks = new List<AudioTrack>();
             CurrentItem = null;
@@ -217,9 +245,9 @@ namespace Shasta.Services
             await ProgressService.SyncSessionAsync(CurrentSession.Id, PositionSeconds, elapsed);
         }
 
-        private static void UpdateTransportDisplay(AbsLibraryItem item)
+        private static void UpdateTransportDisplay(MediaPlayer player, AbsLibraryItem item)
         {
-            SystemMediaTransportControls smtc = _player.SystemMediaTransportControls;
+            SystemMediaTransportControls smtc = player.SystemMediaTransportControls;
             smtc.DisplayUpdater.Type = MediaPlaybackType.Music;
             smtc.DisplayUpdater.MusicProperties.Title = item.GetTitle();
             smtc.DisplayUpdater.MusicProperties.Artist = item.GetAuthorDisplay();
@@ -227,8 +255,16 @@ namespace Shasta.Services
             smtc.DisplayUpdater.Update();
         }
 
-        private static MediaPlayer CreatePlayer()
+        // The only place a MediaPlayer gets constructed — first call wins,
+        // every call after returns the same instance (matches the "one
+        // MediaPlayer for the app's entire lifetime" contract above).
+        private static MediaPlayer GetOrCreatePlayer()
         {
+            if (_player != null)
+            {
+                return _player;
+            }
+
             MediaPlayer player = new MediaPlayer();
 
             SystemMediaTransportControls smtc = player.SystemMediaTransportControls;
@@ -242,6 +278,7 @@ namespace Shasta.Services
             player.PlaybackSession.PlaybackStateChanged += (s, e) => RaiseStateChanged();
             player.PlaybackSession.PositionChanged += (s, e) => RaiseStateChanged();
 
+            _player = player;
             return player;
         }
 

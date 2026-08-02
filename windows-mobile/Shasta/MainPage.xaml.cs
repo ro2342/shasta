@@ -52,7 +52,11 @@ namespace Shasta
                 // as soon as the user changes the system accent color (even
                 // without restarting the app).
                 _uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
-                PlaybackService.StateChanged += PlaybackService_StateChanged;
+                // Deliberately not subscribed here — see MainPage_Loaded.
+                // The constructor runs during App.OnLaunched, before the
+                // window is activated; PlaybackService is touched for the
+                // first time from Loaded instead, once the page is
+                // actually on screen.
             }
             catch (Exception ex)
             {
@@ -135,6 +139,8 @@ namespace Shasta
         {
             try
             {
+                PlaybackService.StateChanged += PlaybackService_StateChanged;
+
                 bool hasSession = await AbsAuthService.RestoreSessionAsync();
                 if (hasSession)
                 {
