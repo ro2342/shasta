@@ -123,10 +123,10 @@ jobs:
           # step.
           $sdkRoot = "${env:ProgramFiles(x86)}\Microsoft SDKs\UWPNuGetPackages"
           $frameworkArm = Get-ChildItem $sdkRoot -Recurse -Filter "Microsoft.NET.Native.Framework.*.appx" -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match "(?i)[\\-]arm[\\-.]" -and $_.FullName -notmatch "(?i)arm64" -and $_.FullName -notmatch "(?i)\.debug\." } |
+            Where-Object { $_.FullName -match "(?i)[\\\-]arm[\\\-.]" -and $_.FullName -notmatch "(?i)arm64" -and $_.FullName -notmatch "(?i)\.debug\." } |
             Select-Object -First 1
           $runtimeArm = Get-ChildItem $sdkRoot -Recurse -Filter "Microsoft.NET.Native.Runtime.*.appx" -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match "(?i)[\\-]arm[\\-.]" -and $_.FullName -notmatch "(?i)arm64" -and $_.FullName -notmatch "(?i)\.debug\." } |
+            Where-Object { $_.FullName -match "(?i)[\\\-]arm[\\\-.]" -and $_.FullName -notmatch "(?i)arm64" -and $_.FullName -notmatch "(?i)\.debug\." } |
             Select-Object -First 1
           if (-not $frameworkArm) {
             Write-Error "No ARM Microsoft.NET.Native.Framework*.appx found anywhere under $sdkRoot. See wp-apps/07-build-e-ci-cd.md's ARM framework redistributable section for how to re-diagnose this."
