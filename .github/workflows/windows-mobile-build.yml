@@ -6,10 +6,19 @@ name: Windows Mobile - Build appxbundle
 # compile" signal, since local development here has no UWP-capable
 # Visual Studio (see wp-apps/07-build-e-ci-cd.md).
 #
-# Debug configuration is intentional, not an oversight: Release builds use
-# the .NET Native toolchain, which has been known to fail silently in
-# scenarios that work fine in Debug/JIT — see the App.xaml.cs global
-# exception handler for the corresponding runtime-side mitigation.
+# Release + .NET Native, not Debug — confirmed by inspecting a real built
+# .appxbundle: a Debug/JIT build declares a hard dependency on
+# Microsoft.NET.CoreRuntime.1.1, and the modern Windows SDK on this runner
+# only carries that framework's redistributable for ARM64/x64/x86 — there
+# is no ARM (32-bit) copy anymore, which is what the actual Lumia target
+# needs. Result: the package can never resolve its dependency and Windows
+# refuses to activate it at all — not even the splash screen renders,
+# since that never gets a chance to run. .NET Native AOT-compiles the app
+# instead, dropping the CoreRuntime dependency entirely (only VCLibs
+# remains, which real Windows 10 Mobile devices already carry). The
+# App.xaml.cs global exception handler stays in place as a mitigation for
+# .NET Native's own known (separate) failure mode — silent AOT bugs in
+# code patterns that work fine under JIT.
 
 on:
   push:
@@ -57,11 +66,12 @@ jobs:
         run: |
           msbuild windows-mobile\Shasta\Shasta.csproj ^
             /restore ^
-            /p:Configuration=Debug ^
+            /p:Configuration=Release ^
             /p:Platform=ARM ^
             /p:AppxBundlePlatforms=ARM ^
             /p:AppxBundle=Always ^
             /p:UapAppxPackageBuildMode=SideloadOnly ^
+            /p:UseDotNetNativeToolchain=true ^
             /p:AppxPackageSigningEnabled=true ^
             /p:PackageCertificateKeyFile=Shasta_TemporaryKey.pfx ^
             /p:PackageCertificatePassword=U0PY2fbJGA8VjQqSi7mZgXwOvsIT ^
