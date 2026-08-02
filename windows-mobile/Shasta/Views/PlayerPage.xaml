@@ -49,7 +49,7 @@
                 <TextBlock Text="Speed" Style="{StaticResource BodyTextBlockStyle}" VerticalAlignment="Center" Margin="0,0,12,0" />
                 <ComboBox x:Name="SpeedComboBox" SelectionChanged="SpeedComboBox_SelectionChanged">
                     <ComboBoxItem Content="0.8x" Tag="0.8" />
-                    <ComboBoxItem Content="1x" Tag="1.0" IsSelected="True" />
+                    <ComboBoxItem Content="1x" Tag="1.0" />
                     <ComboBoxItem Content="1.25x" Tag="1.25" />
                     <ComboBoxItem Content="1.5x" Tag="1.5" />
                     <ComboBoxItem Content="1.75x" Tag="1.75" />

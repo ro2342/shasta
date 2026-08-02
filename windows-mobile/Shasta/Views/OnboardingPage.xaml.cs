@@ -10,6 +10,14 @@ namespace Shasta.Views
         public OnboardingPage()
         {
             this.InitializeComponent();
+            // Set in code, not as IsChecked="True" in the XAML — that
+            // attribute failed to parse at runtime on real 14393 hardware
+            // ("Failed to assign to property ...ToggleButton.IsChecked",
+            // even though it compiled fine against the newer build SDK).
+            // ToggleButton.IsChecked is a nullable bool; a direct C#
+            // assignment isn't subject to whatever XAML markup-conversion
+            // path was failing.
+            PasswordModeRadio.IsChecked = true;
         }
 
         private void ServerUrlBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -24,10 +32,10 @@ namespace Shasta.Views
         private void LoginMode_Checked(object sender, RoutedEventArgs e)
         {
             bool isApiKeyMode = ApiKeyModeRadio.IsChecked == true;
-            // These can run before InitializeComponent finishes wiring up
-            // every field (RadioButton.IsChecked="True" in the XAML fires
-            // Checked during load) — guard against the panels not existing
-            // yet.
+            // Defensive guard: this fires the instant the constructor sets
+            // PasswordModeRadio.IsChecked = true, which happens right after
+            // InitializeComponent — should always be non-null by then, but
+            // costs nothing to check.
             if (PasswordPanel == null || ApiKeyPanel == null)
             {
                 return;

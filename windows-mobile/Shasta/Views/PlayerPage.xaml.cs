@@ -19,6 +19,12 @@ namespace Shasta.Views
         public PlayerPage()
         {
             this.InitializeComponent();
+            // Set in code rather than IsSelected="True" in the XAML — after
+            // OnboardingPage's IsChecked="True" failed to parse at runtime
+            // on real 14393 hardware (compiled fine against the newer SDK),
+            // any boolean-ish XAML attribute on a selection-style control
+            // gets set here instead rather than trusted un-tested.
+            SpeedComboBox.SelectedIndex = 1;
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)

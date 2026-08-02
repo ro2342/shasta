@@ -107,7 +107,6 @@ jobs:
           }
           New-Item -ItemType Directory -Force -Path app | Out-Null
           Copy-Item $bundle.FullName -Destination "app/app.appxbundle" -Force
-          Copy-Item "windows-mobile/Shasta/download-page/index.html" -Destination "app/index.html" -Force
           Copy-Item "windows-mobile/Shasta/shasta-mobile-public-cert.cer" -Destination "app/shasta-mobile-public-cert.cer" -Force
 
           # ARM (32-bit) .NET Native framework redistributables — MSBuild's
@@ -144,6 +143,21 @@ jobs:
           $builtAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
           $versionJson = @{ version = $version; builtAt = $builtAt } | ConvertTo-Json -Compress
           Set-Content -Path "app/version.json" -Value $versionJson -NoNewline
+
+          # Cache-busting: every download link gets a "?v=<version>" query
+          # string, since the underlying filenames never change (always
+          # app.appxbundle, etc.) -- a phone's browser has no other signal
+          # that the file behind that exact URL is different from what it
+          # already has cached. This bit us directly: a real device kept
+          # serving a stale cached appxbundle across multiple fresh
+          # downloads until this was added.
+          $indexHtml = Get-Content "windows-mobile/Shasta/download-page/index.html" -Raw
+          $indexHtml = $indexHtml `
+            -replace 'href="app\.appxbundle"', "href=`"app.appxbundle?v=$version`"" `
+            -replace 'href="shasta-mobile-public-cert\.cer"', "href=`"shasta-mobile-public-cert.cer?v=$version`"" `
+            -replace 'href="microsoft-net-native-framework-arm\.appx"', "href=`"microsoft-net-native-framework-arm.appx?v=$version`"" `
+            -replace 'href="microsoft-net-native-runtime-arm\.appx"', "href=`"microsoft-net-native-runtime-arm.appx?v=$version`""
+          Set-Content -Path "app/index.html" -Value $indexHtml -NoNewline
 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

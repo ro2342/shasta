@@ -35,7 +35,6 @@
                 <RadioButton x:Name="PasswordModeRadio"
                              Content="Username &amp; password"
                              GroupName="LoginMode"
-                             IsChecked="True"
                              Checked="LoginMode_Checked" />
                 <RadioButton x:Name="ApiKeyModeRadio"
                              Content="API key"
