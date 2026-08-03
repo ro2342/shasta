@@ -25,9 +25,18 @@ namespace Shasta.Services
     {
         // Points at the version.json published by the CI workflow (see
         // Phase 7 / .github/workflows/windows-mobile-build.yml).
-        private const string VersionUrl = "https://ro2342.github.io/shasta/app/version.json";
-        public const string DownloadPageUrl = "https://ro2342.github.io/shasta/app/";
-        public const string DownloadFileUrl = "https://ro2342.github.io/shasta/app/app.appxbundle";
+        //
+        // NO "/app/" path segment — confirmed by directly fetching the
+        // live site (not just the GitHub Contents API, which reflects
+        // repo structure and was misleading): actions/upload-pages-
+        // artifact with path: app publishes that folder's CONTENTS as
+        // the site ROOT, not as an /app/ subdirectory. Every URL here
+        // originally pointed at a path that 404s — the download page's
+        // own links worked anyway because they're relative, resolving
+        // correctly against wherever the page itself is served from.
+        private const string VersionUrl = "https://ro2342.github.io/shasta/version.json";
+        public const string DownloadPageUrl = "https://ro2342.github.io/shasta/";
+        public const string DownloadFileUrl = "https://ro2342.github.io/shasta/app.appxbundle";
 
         private const string DownloadFileName = "app.appxbundle";
 

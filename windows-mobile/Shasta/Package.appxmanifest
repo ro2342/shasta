@@ -14,7 +14,7 @@
   <Identity
     Name="ro2342.Shasta"
     Publisher="CN=ro2342-Shasta-SelfSigned"
-    Version="1.0.15.0" />
+    Version="1.0.16.0" />
 
   <mp:PhoneIdentity PhoneProductId="0b7533ef-58c5-428c-a3b5-d0f456524215" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
