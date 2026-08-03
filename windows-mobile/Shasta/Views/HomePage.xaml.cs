@@ -7,7 +7,6 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
 namespace Shasta.Views
@@ -110,8 +109,8 @@ namespace Shasta.Views
                     Width = 56,
                     Height = 56,
                     Stretch = Stretch.UniformToFill,
-                    Source = new BitmapImage(LibraryService.GetCoverUri(item.Id, 100)),
                 };
+                _ = LibraryService.LoadCoverAsync(cover, item.Id, 100);
                 Grid.SetColumn(cover, 0);
 
                 StackPanel text = new StackPanel { Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };

@@ -1,4 +1,5 @@
 using System;
+using Shasta.Services;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.UI.Xaml;
@@ -58,15 +59,26 @@ namespace Shasta
             throw new Exception("Failed to load page " + e.SourcePageType.FullName);
         }
 
-        private void OnSuspending(object sender, SuspendingEventArgs e)
+        private async void OnSuspending(object sender, SuspendingEventArgs e)
         {
-            // Nothing to persist here: LocalDataStore writes to disk on
-            // every operation (see wp-apps/05-dados-locais-e-conteudo.md),
-            // so there's no pending in-memory state. Once PlaybackService
-            // exists (Phase 4), it must NOT be torn down here either — an
-            // active MediaPlayer is what keeps the process alive through
-            // lock/suspend under UWP's single-process background-audio
-            // model on 14393+.
+            // LocalDataStore writes to disk on every operation, so there's
+            // no other pending in-memory state to persist here.
+            // PlaybackService's MediaPlayer must NOT be torn down or
+            // paused in this handler — an active MediaPlayer is what
+            // keeps the process alive through lock/suspend under UWP's
+            // single-process background-audio model on 14393+. Only flush
+            // playback progress to the server, as a safety net in case
+            // suspension does happen mid-book (e.g. a device's Battery
+            // Saver overriding the background-audio exemption).
+            SuspendingDeferral deferral = e.SuspendingOperation.GetDeferral();
+            try
+            {
+                await PlaybackService.FlushProgressOnSuspendAsync();
+            }
+            finally
+            {
+                deferral.Complete();
+            }
         }
     }
 }

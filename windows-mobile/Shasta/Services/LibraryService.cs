@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Shasta.Models;
 using Windows.Data.Json;
+using Windows.Storage.Streams;
+using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace Shasta.Services
 {
@@ -27,7 +30,15 @@ namespace Shasta.Services
 
         public static async Task<List<AbsLibraryItem>> GetLibraryItemsAsync(string libraryId)
         {
-            JsonObject response = await AbsApiClient.GetJsonAsync($"/api/libraries/{libraryId}/items");
+            // Explicit high limit, not omitted — confirmed ABS behavior on
+            // the /series endpoint is that no limit (or limit=0) means
+            // zero results, not "unlimited". Never actually verified this
+            // is also true of /items specifically, but a real device
+            // showed an empty library that should have had books, and
+            // this is the same class of fix already proven necessary
+            // elsewhere in this API.
+            IDictionary<string, string> query = new Dictionary<string, string> { ["limit"] = "1000" };
+            JsonObject response = await AbsApiClient.GetJsonAsync($"/api/libraries/{libraryId}/items", query);
             List<AbsLibraryItem> items = new List<AbsLibraryItem>();
             foreach (IJsonValue entry in JsonHelpers.GetArrayOrEmpty(response, "results"))
             {
@@ -79,6 +90,38 @@ namespace Shasta.Services
             return AbsLibraryItem.Parse(response);
         }
 
-        public static Uri GetCoverUri(string itemId, int? width = null) => AbsApiClient.BuildCoverUri(itemId, width);
+        // Fetches cover bytes over the authenticated pipeline and decodes
+        // them directly into the target Image's Source — see
+        // AbsApiClient.GetCoverBytesAsync for why this replaced a plain
+        // Image.Source = new BitmapImage(uri) approach. Swallows failures
+        // (missing cover, network hiccup) rather than throwing, since a
+        // blank cover is a fine degraded state and callers loop over many
+        // items — one bad cover shouldn't abort a whole list render.
+        public static async Task LoadCoverAsync(Image target, string itemId, int? width = null)
+        {
+            try
+            {
+                byte[] bytes = await AbsApiClient.GetCoverBytesAsync(itemId, width);
+                BitmapImage bitmap = new BitmapImage();
+                using (InMemoryRandomAccessStream stream = new InMemoryRandomAccessStream())
+                {
+                    using (DataWriter writer = new DataWriter(stream.GetOutputStreamAt(0)))
+                    {
+                        writer.WriteBytes(bytes);
+                        await writer.StoreAsync();
+                        await writer.FlushAsync();
+                        writer.DetachStream();
+                    }
+                    stream.Seek(0);
+                    await bitmap.SetSourceAsync(stream);
+                }
+                target.Source = bitmap;
+            }
+            catch
+            {
+                // Leave target.Source as whatever it already was (usually
+                // null/blank) — a missing cover is not fatal.
+            }
+        }
     }
 }

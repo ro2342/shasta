@@ -6,7 +6,6 @@ using Shasta.Models;
 using Shasta.Services;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
 namespace Shasta.Views
@@ -52,7 +51,7 @@ namespace Shasta.Views
         private void Populate(AbsLibraryItem item)
         {
             _item = item;
-            CoverImage.Source = new BitmapImage(LibraryService.GetCoverUri(item.Id, 300));
+            _ = LibraryService.LoadCoverAsync(CoverImage, item.Id, 300);
             TitleText.Text = item.GetTitle();
             AuthorText.Text = item.GetAuthorDisplay();
 

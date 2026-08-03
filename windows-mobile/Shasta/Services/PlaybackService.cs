@@ -117,7 +117,10 @@ namespace Shasta.Services
                 player.MediaOpened += Player_SeekOnceOpened;
             }
 
-            UpdateTransportDisplay(player, item);
+            // Fire-and-forget: title/artist push synchronously inside this
+            // call, the cover fetch that follows shouldn't delay playback
+            // actually starting.
+            _ = UpdateTransportDisplay(player, item);
             player.Source = _playbackList;
             player.Play();
             StartSyncTimer();
@@ -202,6 +205,22 @@ namespace Shasta.Services
             RaiseStateChanged();
         }
 
+        // Called from App.xaml.cs's OnSuspending — persists progress to the
+        // server without touching playback/the MediaPlayer at all, as a
+        // safety net in case suspension happens mid-book despite the
+        // background-audio exemption (e.g. a device's Battery Saver
+        // overriding it). Does nothing if nothing is playing.
+        public static async Task FlushProgressOnSuspendAsync()
+        {
+            if (CurrentSession == null)
+            {
+                return;
+            }
+            double elapsed = Math.Max(0, (DateTimeOffset.UtcNow - _lastSyncAtUtc).TotalSeconds);
+            _lastSyncAtUtc = DateTimeOffset.UtcNow;
+            await ProgressService.SyncSessionAsync(CurrentSession.Id, PositionSeconds, elapsed);
+        }
+
         private static int FindTrackIndexForOffset(double offsetSeconds)
         {
             for (int i = _tracks.Count - 1; i >= 0; i--)
@@ -245,14 +264,25 @@ namespace Shasta.Services
             await ProgressService.SyncSessionAsync(CurrentSession.Id, PositionSeconds, elapsed);
         }
 
-        private static void UpdateTransportDisplay(MediaPlayer player, AbsLibraryItem item)
+        private static async Task UpdateTransportDisplay(MediaPlayer player, AbsLibraryItem item)
         {
             SystemMediaTransportControls smtc = player.SystemMediaTransportControls;
             smtc.DisplayUpdater.Type = MediaPlaybackType.Music;
             smtc.DisplayUpdater.MusicProperties.Title = item.GetTitle();
             smtc.DisplayUpdater.MusicProperties.Artist = item.GetAuthorDisplay();
-            smtc.DisplayUpdater.Thumbnail = RandomAccessStreamReference.CreateFromUri(LibraryService.GetCoverUri(item.Id, 300));
+            // Push title/artist immediately — don't let a slow or failed
+            // cover fetch delay the lock-screen text from appearing at all.
             smtc.DisplayUpdater.Update();
+
+            try
+            {
+                smtc.DisplayUpdater.Thumbnail = await AbsApiClient.GetCoverStreamReferenceAsync(item.Id, 300);
+                smtc.DisplayUpdater.Update();
+            }
+            catch
+            {
+                // Missing cover art on the lock screen is not fatal.
+            }
         }
 
         // The only place a MediaPlayer gets constructed — first call wins,
@@ -265,7 +295,21 @@ namespace Shasta.Services
                 return _player;
             }
 
-            MediaPlayer player = new MediaPlayer();
+            MediaPlayer player = new MediaPlayer
+            {
+                // Explicit, not left at the default — this is what tells
+                // Windows this playback qualifies for the standard
+                // background-audio continuation (screen lock, app
+                // switched away) instead of leaving that ambiguous. A
+                // plausible real cause of "only plays with the app's
+                // screen active": nothing in this app explicitly pauses
+                // on suspend/background, so if playback was still
+                // stopping, an unset AudioCategory not properly
+                // signaling "this is media" to the session/power manager
+                // is the most concrete lead available without a device
+                // attached to a debugger.
+                AudioCategory = MediaPlayerAudioCategory.Media,
+            };
 
             SystemMediaTransportControls smtc = player.SystemMediaTransportControls;
             smtc.IsEnabled = true;

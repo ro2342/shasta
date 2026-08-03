@@ -8,7 +8,6 @@ using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Input;
 using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
 namespace Shasta
@@ -69,7 +68,13 @@ namespace Shasta
             await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateMiniPlayer);
         }
 
-        private void UpdateMiniPlayer()
+        // StateChanged fires often (every playback position tick) — track
+        // which item the cover was last loaded for so a fresh network
+        // fetch only happens when the playing item actually changes, not
+        // on every single tick.
+        private string _miniPlayerCoverItemId;
+
+        private async void UpdateMiniPlayer()
         {
             bool isOnPlayerPage = ContentFrame.CurrentSourcePageType == typeof(PlayerPage);
             if (!PlaybackService.HasActiveItem || isOnPlayerPage)
@@ -81,9 +86,15 @@ namespace Shasta
             AbsLibraryItem item = PlaybackService.CurrentItem;
             MiniPlayerTitleText.Text = item.GetTitle();
             MiniPlayerAuthorText.Text = item.GetAuthorDisplay();
-            MiniPlayerCover.Source = new BitmapImage(LibraryService.GetCoverUri(item.Id, 100));
-            MiniPlayerPlayPauseButton.Content = PlaybackService.IsPlaying ? "Pause" : "Play";
+            // Segoe MDL2 Assets glyphs: Pause is codepoint E769, Play is E768.
+            MiniPlayerPlayPauseIcon.Glyph = PlaybackService.IsPlaying ? "" : "";
             MiniPlayerBar.Visibility = Visibility.Visible;
+
+            if (_miniPlayerCoverItemId != item.Id)
+            {
+                _miniPlayerCoverItemId = item.Id;
+                await LibraryService.LoadCoverAsync(MiniPlayerCover, item.Id, 100);
+            }
         }
 
         private void MiniPlayerBar_Tapped(object sender, TappedRoutedEventArgs e)

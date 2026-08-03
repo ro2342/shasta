@@ -184,7 +184,9 @@
                                 <TextBlock x:Name="MiniPlayerTitleText" Style="{StaticResource BodyTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                                 <TextBlock x:Name="MiniPlayerAuthorText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
-                            <Button x:Name="MiniPlayerPlayPauseButton" Grid.Column="2" Content="Pause" Click="MiniPlayerPlayPauseButton_Click" VerticalAlignment="Center" />
+                            <Button x:Name="MiniPlayerPlayPauseButton" Grid.Column="2" Click="MiniPlayerPlayPauseButton_Click" VerticalAlignment="Center">
+                                <FontIcon x:Name="MiniPlayerPlayPauseIcon" Glyph="&#xE769;" FontSize="16" />
+                            </Button>
                         </Grid>
                     </Border>
 

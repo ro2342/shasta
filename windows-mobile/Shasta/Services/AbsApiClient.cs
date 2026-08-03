@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Shasta.Models;
 using Windows.Data.Json;
+using Windows.Storage.Streams;
 
 namespace Shasta.Services
 {
@@ -77,6 +78,32 @@ namespace Shasta.Services
             return new JsonObject();
         }
 
+        // Raw bytes over the same authenticated pipeline as every JSON
+        // call — covers and audio streams use the `Authorization` header,
+        // not a `?token=` query param. The query-param approach was an
+        // unverified assumption (see the removed BuildCoverUri/
+        // BuildStreamUri comments in git history) that turned out not to
+        // work against a real server: covers silently failed to load.
+        public static async Task<byte[]> GetBytesAsync(string path, IDictionary<string, string> query = null)
+        {
+            Uri uri = BuildUri(path, query);
+            using (HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, uri))
+            {
+                if (!string.IsNullOrEmpty(_bearerToken))
+                {
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _bearerToken);
+                }
+                using (HttpResponseMessage response = await _http.SendAsync(request))
+                {
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        throw new AbsApiException(response.StatusCode, "");
+                    }
+                    return await response.Content.ReadAsByteArrayAsync();
+                }
+            }
+        }
+
         private static async Task<string> SendRawAsync(HttpMethod method, string path, JsonObject body, IDictionary<string, string> query, IDictionary<string, string> extraHeaders)
         {
             Uri uri = BuildUri(path, query);
@@ -138,20 +165,40 @@ namespace Shasta.Services
             return new Uri(sb.ToString());
         }
 
-        // ABS accepts the bearer token as a `token` query parameter on
-        // plain GET resources (covers, streamed audio) — lets
-        // Image.Source / MediaSource.CreateFromUri be used directly with
-        // no custom HttpClient streaming code. Confirmed generally from
-        // the existing Rust client, not endpoint-by-endpoint — verify
-        // against a live server in Phase 3/4 before leaning on it further.
-        public static Uri BuildCoverUri(string itemId, int? width = null)
+        // Covers are fetched as bytes over the authenticated HttpClient
+        // pipeline (GetCoverBytesAsync), not a bare Image.Source URI —
+        // the `?token=` query-param approach was assumed to work the same
+        // way for images as it does for streamed audio, but real-device
+        // testing showed covers silently failing to load while streaming
+        // worked fine. Reusing the exact request path already proven to
+        // work for JSON calls sidesteps whatever the actual difference
+        // is, rather than continuing to guess at it.
+        public static async Task<byte[]> GetCoverBytesAsync(string itemId, int? width = null)
         {
-            Dictionary<string, string> query = new Dictionary<string, string> { ["token"] = _bearerToken };
+            Dictionary<string, string> query = new Dictionary<string, string>();
             if (width.HasValue)
             {
                 query["width"] = width.Value.ToString();
             }
-            return BuildUri($"/api/items/{itemId}/cover", query);
+            return await GetBytesAsync($"/api/items/{itemId}/cover", query);
+        }
+
+        // Same cover bytes, wrapped for SystemMediaTransportControls'
+        // DisplayUpdater.Thumbnail (RandomAccessStreamReference, not an
+        // Image control) — used by PlaybackService for lock-screen art.
+        public static async Task<RandomAccessStreamReference> GetCoverStreamReferenceAsync(string itemId, int? width = null)
+        {
+            byte[] bytes = await GetCoverBytesAsync(itemId, width);
+            InMemoryRandomAccessStream stream = new InMemoryRandomAccessStream();
+            using (DataWriter writer = new DataWriter(stream.GetOutputStreamAt(0)))
+            {
+                writer.WriteBytes(bytes);
+                await writer.StoreAsync();
+                await writer.FlushAsync();
+                writer.DetachStream();
+            }
+            stream.Seek(0);
+            return RandomAccessStreamReference.CreateFromStream(stream);
         }
 
         public static Uri BuildStreamUri(AudioTrack track)

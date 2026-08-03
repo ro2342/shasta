@@ -40,9 +40,21 @@
             </Grid>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
-                <Button x:Name="SkipBackButton" Content="-15s" Click="SkipBackButton_Click" Margin="0,0,8,0" />
-                <Button x:Name="PlayPauseButton" Content="Pause" Click="PlayPauseButton_Click" Margin="0,0,8,0" />
-                <Button x:Name="SkipForwardButton" Content="+30s" Click="SkipForwardButton_Click" />
+                <Button x:Name="SkipBackButton" Click="SkipBackButton_Click" Margin="0,0,8,0">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE76B;" FontSize="16" />
+                        <TextBlock Text="15s" Margin="4,0,0,0" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="PlayPauseButton" Click="PlayPauseButton_Click" Margin="0,0,8,0">
+                    <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="20" />
+                </Button>
+                <Button x:Name="SkipForwardButton" Click="SkipForwardButton_Click">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="30s" Margin="0,0,4,0" VerticalAlignment="Center" />
+                        <FontIcon Glyph="&#xE76C;" FontSize="16" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,20">

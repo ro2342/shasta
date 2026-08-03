@@ -37,7 +37,8 @@
                   Padding="12,0,12,16"
                   Visibility="Collapsed"
                   IsItemClickEnabled="True"
-                  ItemClick="ItemsListView_ItemClick">
+                  ItemClick="ItemsListView_ItemClick"
+                  ContainerContentChanging="ItemsListView_ContainerContentChanging">
             <ListView.ItemTemplate>
                 <DataTemplate>
                     <Border Style="{StaticResource CardBorderStyle}">
@@ -46,8 +47,16 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <Image Grid.Column="0"
-                                   Source="{Binding CoverUri}"
+                            <!-- No Source binding — covers need an
+                                 authenticated fetch (see
+                                 LibraryService.LoadCoverAsync), not a bare
+                                 URI a XAML Binding could point at. Loaded
+                                 imperatively per-row from
+                                 ContainerContentChanging in the code-behind,
+                                 the standard UWP pattern for async images
+                                 inside a virtualized ListView. -->
+                            <Image x:Name="CoverImage"
+                                   Grid.Column="0"
                                    Width="56" Height="56"
                                    Stretch="UniformToFill" />
                             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">

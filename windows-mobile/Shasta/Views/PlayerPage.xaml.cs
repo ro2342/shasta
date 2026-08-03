@@ -7,7 +7,6 @@ using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Media.Imaging;
 using Windows.UI.Xaml.Navigation;
 
 namespace Shasta.Views
@@ -78,7 +77,7 @@ namespace Shasta.Views
                 return;
             }
 
-            CoverImage.Source = new BitmapImage(LibraryService.GetCoverUri(item.Id, 300));
+            _ = LibraryService.LoadCoverAsync(CoverImage, item.Id, 300);
             TitleText.Text = item.GetTitle();
             AuthorText.Text = item.GetAuthorDisplay();
 
@@ -116,7 +115,8 @@ namespace Shasta.Views
 
             CurrentTimeText.Text = FormatTime(position);
             DurationText.Text = FormatTime(duration);
-            PlayPauseButton.Content = PlaybackService.IsPlaying ? "Pause" : "Play";
+            // Segoe MDL2 Assets glyphs: Pause is codepoint E769, Play is E768.
+            PlayPauseIcon.Glyph = PlaybackService.IsPlaying ? "" : "";
         }
 
         private void PositionSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
