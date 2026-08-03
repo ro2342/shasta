@@ -91,6 +91,19 @@ namespace Shasta.Services
             int startIndex = FindTrackIndexForOffset(seekTarget);
             double offsetWithinTrack = Math.Max(0, seekTarget - (startIndex < _tracks.Count ? _tracks[startIndex].StartOffset : 0));
 
+            // Fetched once up front and applied to every track's display
+            // properties below — cheaper than fetching per item, and a
+            // failure here just means no lock-screen/volume-overlay
+            // thumbnail, not a playback failure.
+            RandomAccessStreamReference coverStreamReference = null;
+            try
+            {
+                coverStreamReference = await AbsApiClient.GetCoverStreamReferenceAsync(item.Id, 300);
+            }
+            catch
+            {
+            }
+
             _playbackList = new MediaPlaybackList();
             foreach (AudioTrack track in _tracks)
             {
@@ -103,7 +116,28 @@ namespace Shasta.Services
                 MediaSource source = localFile != null
                     ? MediaSource.CreateFromStorageFile(localFile)
                     : MediaSource.CreateFromUri(AbsApiClient.BuildStreamUri(track));
-                _playbackList.Items.Add(new MediaPlaybackItem(source));
+                MediaPlaybackItem playbackItem = new MediaPlaybackItem(source);
+
+                // MediaPlaybackList uses MediaPlayer's automatic SMTC
+                // integration by default (CommandManager stays enabled —
+                // never disabled here), which reads display metadata from
+                // each MediaPlaybackItem itself, not just from the
+                // player-level DisplayUpdater set in
+                // UpdateTransportDisplay below. Setting both is
+                // deliberate belt-and-suspenders: a real device showed no
+                // title on the volume-button overlay with only the
+                // player-level DisplayUpdater set.
+                MediaItemDisplayProperties displayProperties = playbackItem.GetDisplayProperties();
+                displayProperties.Type = MediaPlaybackType.Music;
+                displayProperties.MusicProperties.Title = item.GetTitle();
+                displayProperties.MusicProperties.Artist = item.GetAuthorDisplay();
+                if (coverStreamReference != null)
+                {
+                    displayProperties.Thumbnail = coverStreamReference;
+                }
+                playbackItem.ApplyDisplayProperties(displayProperties);
+
+                _playbackList.Items.Add(playbackItem);
             }
             if (startIndex > 0 && startIndex < _playbackList.Items.Count)
             {
@@ -117,10 +151,9 @@ namespace Shasta.Services
                 player.MediaOpened += Player_SeekOnceOpened;
             }
 
-            // Fire-and-forget: title/artist push synchronously inside this
-            // call, the cover fetch that follows shouldn't delay playback
-            // actually starting.
-            _ = UpdateTransportDisplay(player, item);
+            // Reuses the cover already fetched above instead of a second
+            // network round trip.
+            UpdateTransportDisplay(player, item, coverStreamReference);
             player.Source = _playbackList;
             player.Play();
             StartSyncTimer();
@@ -264,25 +297,17 @@ namespace Shasta.Services
             await ProgressService.SyncSessionAsync(CurrentSession.Id, PositionSeconds, elapsed);
         }
 
-        private static async Task UpdateTransportDisplay(MediaPlayer player, AbsLibraryItem item)
+        private static void UpdateTransportDisplay(MediaPlayer player, AbsLibraryItem item, RandomAccessStreamReference coverStreamReference)
         {
             SystemMediaTransportControls smtc = player.SystemMediaTransportControls;
             smtc.DisplayUpdater.Type = MediaPlaybackType.Music;
             smtc.DisplayUpdater.MusicProperties.Title = item.GetTitle();
             smtc.DisplayUpdater.MusicProperties.Artist = item.GetAuthorDisplay();
-            // Push title/artist immediately — don't let a slow or failed
-            // cover fetch delay the lock-screen text from appearing at all.
+            if (coverStreamReference != null)
+            {
+                smtc.DisplayUpdater.Thumbnail = coverStreamReference;
+            }
             smtc.DisplayUpdater.Update();
-
-            try
-            {
-                smtc.DisplayUpdater.Thumbnail = await AbsApiClient.GetCoverStreamReferenceAsync(item.Id, 300);
-                smtc.DisplayUpdater.Update();
-            }
-            catch
-            {
-                // Missing cover art on the lock screen is not fatal.
-            }
         }
 
         // The only place a MediaPlayer gets constructed — first call wins,
