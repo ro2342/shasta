@@ -5,8 +5,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.Data.Json;
 using Windows.Storage;
-using Windows.Storage.AccessCache;
-using Windows.Storage.Pickers;
+using Windows.System;
 
 namespace Shasta.Services
 {
@@ -30,59 +29,33 @@ namespace Shasta.Services
         public const string DownloadPageUrl = "https://ro2342.github.io/shasta/app/";
         public const string DownloadFileUrl = "https://ro2342.github.io/shasta/app/app.appxbundle";
 
-        private const string DownloadFolderTokenKey = "UpdateDownloadFolder";
         private const string DownloadFileName = "app.appxbundle";
 
-        public static bool HasDownloadFolder()
-        {
-            return StorageApplicationPermissions.FutureAccessList.ContainsItem(DownloadFolderTokenKey);
-        }
-
-        public static async Task<StorageFolder> PickDownloadFolderAsync()
-        {
-            FolderPicker picker = new FolderPicker
-            {
-                SuggestedStartLocation = PickerLocationId.Downloads,
-            };
-            picker.FileTypeFilter.Add("*");
-
-            StorageFolder folder = await picker.PickSingleFolderAsync();
-            if (folder == null)
-            {
-                return null;
-            }
-
-            StorageApplicationPermissions.FutureAccessList.AddOrReplace(DownloadFolderTokenKey, folder);
-            return folder;
-        }
-
-        // Only asks for the folder the first time — after that, the token
-        // persisted in FutureAccessList already grants direct access, no
-        // new picker.
-        public static async Task<StorageFolder> GetOrPickDownloadFolderAsync()
-        {
-            if (HasDownloadFolder())
-            {
-                return await StorageApplicationPermissions.FutureAccessList.GetFolderAsync(DownloadFolderTokenKey);
-            }
-            return await PickDownloadFolderAsync();
-        }
-
+        // Downloads straight into the app's own LocalFolder — no
+        // FolderPicker. A picker was here originally (matching the
+        // wp-apps template's desktop-oriented pattern), but on phone form
+        // factor there's no guarantee a meaningful "Downloads" location
+        // even exists the way FolderPicker expects, and it's an extra UI
+        // step the user has to notice and complete. LocalFolder is always
+        // writable without asking, and Launcher.LaunchFileAsync can open
+        // a file from the calling app's own storage without needing it
+        // to live somewhere externally picked.
         public static async Task<StorageFile> DownloadUpdateAsync(IProgress<double> progress)
         {
-            StorageFolder folder = await GetOrPickDownloadFolderAsync();
-            if (folder == null)
-            {
-                return null;
-            }
-
-            StorageFile file = await folder.CreateFileAsync(DownloadFileName, CreationCollisionOption.ReplaceExisting);
+            StorageFile file = await ApplicationData.Current.LocalFolder.CreateFileAsync(
+                DownloadFileName, CreationCollisionOption.ReplaceExisting);
 
             using (HttpClient client = new HttpClient())
             // ResponseHeadersRead allows reading the body as a stream
             // (block by block) instead of loading the whole download into
             // memory before writing to disk — matters on a low-RAM device.
-            using (HttpResponseMessage response = await client.GetAsync(new Uri(DownloadFileUrl), HttpCompletionOption.ResponseHeadersRead))
+            // Cache-busted with the current time: the app itself has no
+            // notion of "which build" to ask for by version number before
+            // downloading, and app.appxbundle is always the same filename
+            // across releases, the same trap version.json/index.html
+            // already hit on the download page.
+            using (HttpResponseMessage response = await client.GetAsync(
+                new Uri($"{DownloadFileUrl}?t={DateTimeOffset.UtcNow.Ticks}"), HttpCompletionOption.ResponseHeadersRead))
             {
                 response.EnsureSuccessStatusCode();
                 long? totalBytes = response.Content.Headers.ContentLength;
@@ -106,6 +79,12 @@ namespace Shasta.Services
             }
 
             return file;
+        }
+
+        public static async Task<bool> InstallUpdateAsync(StorageFile file)
+        {
+            LauncherOptions options = new LauncherOptions { TreatAsUntrusted = false };
+            return await Launcher.LaunchFileAsync(file, options);
         }
 
         // Trusted version source: always the installed package's own
@@ -142,7 +121,11 @@ namespace Shasta.Services
                 using (HttpClient client = new HttpClient())
                 {
                     client.Timeout = TimeSpan.FromSeconds(10);
-                    string json = await client.GetStringAsync(new Uri(VersionUrl));
+                    // Cache-busted for the same reason as the download
+                    // above — version.json needs to be read fresh every
+                    // check, not whatever the OS/CDN cached last time.
+                    string json = await client.GetStringAsync(
+                        new Uri($"{VersionUrl}?t={DateTimeOffset.UtcNow.Ticks}"));
                     JsonObject obj = JsonObject.Parse(json);
                     string latest = obj.GetNamedString("version");
                     string installed = GetInstalledVersion();

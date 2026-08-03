@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Shasta.Models;
 using Shasta.Services;
 using Windows.Storage;
-using Windows.System;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Media;
@@ -144,7 +143,11 @@ namespace Shasta.Views
                 // native installer screen — a sideloaded app can never
                 // install itself silently. See
                 // wp-apps/07-build-e-ci-cd.md#o-limite-de-fábrica.
-                await Launcher.LaunchFileAsync(_downloadedUpdateFile);
+                bool launched = await UpdateCheckService.InstallUpdateAsync(_downloadedUpdateFile);
+                if (!launched)
+                {
+                    UpdateStatusText.Text = "Couldn't open the installer. Try downloading again.";
+                }
             }
         }
 
