@@ -10,11 +10,14 @@
 
     <ScrollViewer Padding="16,16,16,24">
         <StackPanel>
-            <Image x:Name="CoverImage"
-                   Width="220" Height="220"
-                   Stretch="Uniform"
-                   HorizontalAlignment="Center"
-                   Margin="0,0,0,20" />
+            <!-- Border+ImageBrush (not Image) for rounded corners — see
+                 LibraryService.LoadCoverAsync(Border, ...). -->
+            <Border x:Name="CoverImage"
+                    Width="240" Height="240"
+                    CornerRadius="16"
+                    Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,20" />
 
             <TextBlock x:Name="TitleText"
                        Style="{StaticResource SubtitleTextBlockStyle}"
@@ -39,35 +42,73 @@
                 <TextBlock x:Name="DurationText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" HorizontalAlignment="Right" />
             </Grid>
 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,20">
-                <Button x:Name="SkipBackButton" Click="SkipBackButton_Click" Margin="0,0,8,0">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon Glyph="&#xE76B;" FontSize="16" />
-                        <TextBlock Text="15s" Margin="4,0,0,0" VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,24">
+                <Button x:Name="SkipBackButton"
+                        Style="{StaticResource TransportIconButtonStyle}"
+                        Click="SkipBackButton_Click"
+                        Margin="0,0,16,0">
+                    <StackPanel>
+                        <FontIcon Glyph="&#xE76B;" FontSize="20" HorizontalAlignment="Center" />
+                        <TextBlock Text="15s" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" HorizontalAlignment="Center" />
                     </StackPanel>
                 </Button>
-                <Button x:Name="PlayPauseButton" Click="PlayPauseButton_Click" Margin="0,0,8,0">
-                    <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="20" />
+                <Button x:Name="PlayPauseButton"
+                        Style="{StaticResource CirclePlayButtonStyle}"
+                        Click="PlayPauseButton_Click"
+                        Margin="0,0,16,0">
+                    <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="28" />
                 </Button>
-                <Button x:Name="SkipForwardButton" Click="SkipForwardButton_Click">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="30s" Margin="0,0,4,0" VerticalAlignment="Center" />
-                        <FontIcon Glyph="&#xE76C;" FontSize="16" />
+                <Button x:Name="SkipForwardButton"
+                        Style="{StaticResource TransportIconButtonStyle}"
+                        Click="SkipForwardButton_Click">
+                    <StackPanel>
+                        <FontIcon Glyph="&#xE76C;" FontSize="20" HorizontalAlignment="Center" />
+                        <TextBlock Text="30s" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" HorizontalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </StackPanel>
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
-                <TextBlock Text="Speed" Style="{StaticResource BodyTextBlockStyle}" VerticalAlignment="Center" Margin="0,0,12,0" />
-                <ComboBox x:Name="SpeedComboBox" SelectionChanged="SpeedComboBox_SelectionChanged">
-                    <ComboBoxItem Content="0.8x" Tag="0.8" />
-                    <ComboBoxItem Content="1x" Tag="1.0" />
-                    <ComboBoxItem Content="1.25x" Tag="1.25" />
-                    <ComboBoxItem Content="1.5x" Tag="1.5" />
-                    <ComboBoxItem Content="1.75x" Tag="1.75" />
-                    <ComboBoxItem Content="2x" Tag="2.0" />
-                </ComboBox>
-            </StackPanel>
+            <!-- Bottom icon bar (Chapters toggle / Speed) — same idea as
+                 the Chapters/Downloads/Speed/Sleep row in Lissen's player,
+                 replacing the old always-inline Speed ComboBox + an
+                 always-expanded chapters list further down the page. -->
+            <Grid Margin="0,0,0,20">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="ChaptersToggleButton"
+                        Grid.Column="0"
+                        Style="{StaticResource PlayerBottomBarButtonStyle}"
+                        Click="ChaptersToggleButton_Click"
+                        IsEnabled="False">
+                    <StackPanel>
+                        <FontIcon Glyph="&#xE8FD;" FontSize="18" HorizontalAlignment="Center" />
+                        <TextBlock Text="Chapters" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                    </StackPanel>
+                </Button>
+                <Grid Grid.Column="1">
+                    <Button x:Name="SpeedButton"
+                            Style="{StaticResource PlayerBottomBarButtonStyle}">
+                        <StackPanel>
+                            <FontIcon Glyph="&#xE916;" FontSize="18" HorizontalAlignment="Center" />
+                            <TextBlock x:Name="SpeedButtonText" Text="1x" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.8" HorizontalAlignment="Center" Margin="0,4,0,0" />
+                        </StackPanel>
+                        <Button.Flyout>
+                            <Flyout>
+                                <ComboBox x:Name="SpeedComboBox" Header="Playback speed" SelectionChanged="SpeedComboBox_SelectionChanged">
+                                    <ComboBoxItem Content="0.8x" Tag="0.8" />
+                                    <ComboBoxItem Content="1x" Tag="1.0" />
+                                    <ComboBoxItem Content="1.25x" Tag="1.25" />
+                                    <ComboBoxItem Content="1.5x" Tag="1.5" />
+                                    <ComboBoxItem Content="1.75x" Tag="1.75" />
+                                    <ComboBoxItem Content="2x" Tag="2.0" />
+                                </ComboBox>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                </Grid>
+            </Grid>
 
             <Border Style="{StaticResource SectionDividerStyle}" />
 

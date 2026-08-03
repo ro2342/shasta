@@ -6,6 +6,7 @@ using Shasta.Models;
 using Shasta.Services;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
 namespace Shasta.Views
@@ -110,14 +111,15 @@ namespace Shasta.Views
             }
             args.RegisterUpdateCallback(async (s, e) =>
             {
-                Image image = (e.ItemContainer.ContentTemplateRoot as FrameworkElement)?.FindName("CoverImage") as Image;
-                if (image != null)
+                Border cover = (e.ItemContainer.ContentTemplateRoot as FrameworkElement)?.FindName("CoverImage") as Border;
+                if (cover != null)
                 {
                     // Recycled containers can still be showing a previous
-                    // row's cover — clear it before the new fetch so a
-                    // stale image never flashes for the wrong book.
-                    image.Source = null;
-                    await LibraryService.LoadCoverAsync(image, row.Id, 100);
+                    // row's cover — reset to the placeholder brush before
+                    // the new fetch so a stale image never flashes for the
+                    // wrong book.
+                    cover.Background = (Brush)Application.Current.Resources["SystemControlBackgroundBaseLowBrush"];
+                    await LibraryService.LoadCoverAsync(cover, row.Id, 100);
                 }
             });
         }

@@ -47,18 +47,23 @@
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
-                            <!-- No Source binding — covers need an
+                            <!-- No Background binding — covers need an
                                  authenticated fetch (see
                                  LibraryService.LoadCoverAsync), not a bare
                                  URI a XAML Binding could point at. Loaded
                                  imperatively per-row from
                                  ContainerContentChanging in the code-behind,
                                  the standard UWP pattern for async images
-                                 inside a virtualized ListView. -->
-                            <Image x:Name="CoverImage"
-                                   Grid.Column="0"
-                                   Width="56" Height="56"
-                                   Stretch="UniformToFill" />
+                                 inside a virtualized ListView. A Border
+                                 (not Image) so the cover gets rounded
+                                 corners — Border clips its Background to
+                                 CornerRadius on this runtime, Image has no
+                                 such property. -->
+                            <Border x:Name="CoverImage"
+                                    Grid.Column="0"
+                                    Width="56" Height="56"
+                                    CornerRadius="6"
+                                    Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
                             <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
                                 <TextBlock Text="{Binding Title}"
                                            Style="{StaticResource BodyTextBlockStyle}"

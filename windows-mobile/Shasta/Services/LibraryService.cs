@@ -5,6 +5,7 @@ using Shasta.Models;
 using Windows.Data.Json;
 using Windows.Storage.Streams;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Media.Imaging;
 
 namespace Shasta.Services
@@ -121,6 +122,38 @@ namespace Shasta.Services
             {
                 // Leave target.Source as whatever it already was (usually
                 // null/blank) — a missing cover is not fatal.
+            }
+        }
+
+        // Same fetch, but for a Border with CornerRadius — Image has no
+        // CornerRadius property on this runtime, so every rounded cover in
+        // the app (item detail, player, cards, mini-player) is a Border
+        // whose Background is set to an ImageBrush instead of a plain
+        // Image control. Border DOES clip its Background to CornerRadius
+        // on this runtime, unlike arbitrary child content.
+        public static async Task LoadCoverAsync(Border target, string itemId, int? width = null)
+        {
+            try
+            {
+                byte[] bytes = await AbsApiClient.GetCoverBytesAsync(itemId, width);
+                BitmapImage bitmap = new BitmapImage();
+                using (InMemoryRandomAccessStream stream = new InMemoryRandomAccessStream())
+                {
+                    using (DataWriter writer = new DataWriter(stream.GetOutputStreamAt(0)))
+                    {
+                        writer.WriteBytes(bytes);
+                        await writer.StoreAsync();
+                        await writer.FlushAsync();
+                        writer.DetachStream();
+                    }
+                    stream.Seek(0);
+                    await bitmap.SetSourceAsync(stream);
+                }
+                target.Background = new ImageBrush { ImageSource = bitmap, Stretch = Stretch.UniformToFill };
+            }
+            catch
+            {
+                // Leave whatever placeholder Background the Border already had.
             }
         }
     }

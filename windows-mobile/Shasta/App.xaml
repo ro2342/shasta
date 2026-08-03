@@ -36,6 +36,191 @@
         <Style TargetType="PivotHeaderItem">
             <Setter Property="FontSize" Value="16" />
         </Style>
+
+        <!--
+          Reference-app polish pass (ABS/Lissen comparison): a filled pill
+          action button for the primary "Play" call to action on item
+          detail.
+
+          IMPORTANT: Control.CornerRadius (the plain settable property on
+          Button/ComboBox/etc., as opposed to Border.CornerRadius) was only
+          added in 10.0.17763.0 (RS5/1809, UniversalApiContract v7) — NOT
+          available at this app's min version, 10.0.14393.0. It compiles
+          fine against the 17763 SDK and would throw a XAML property-not-
+          found error only on real Anniversary Update hardware, the exact
+          same class of bug as SystemControlErrorTextForegroundBrush and
+          ToggleButton.IsChecked elsewhere in this app (see
+          wp-apps/03-design-visual-e-navegacao.md). Every rounded button
+          below therefore uses an explicit ControlTemplate with a Border
+          for the corner radius — Border.CornerRadius has existed since
+          the UWP baseline — same pattern as MainPage.xaml's NavRowStyle.
+        -->
+        <Style x:Key="PrimaryPillButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{ThemeResource SystemControlHighlightAccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="0,14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="24">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.85" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.7" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.4" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                              Padding="{TemplateBinding Padding}"
+                                              Content="{TemplateBinding Content}"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary square icon button next to the pill (Download,
+             overflow) — quiet fill, no border. Same ControlTemplate
+             approach as PrimaryPillButtonStyle, see its comment above. -->
+        <Style x:Key="SecondaryIconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+            <Setter Property="Width" Value="52" />
+            <Setter Property="Height" Value="52" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="24">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.85" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.7" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.4" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                              Content="{TemplateBinding Content}"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The big circular transport button on PlayerPage. Same
+             ControlTemplate approach, see PrimaryPillButtonStyle's
+             comment above. -->
+        <Style x:Key="CirclePlayButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{ThemeResource SystemControlHighlightAccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Width" Value="80" />
+            <Setter Property="Height" Value="80" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="RootBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="40">
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.85" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.7" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Disabled">
+                                        <VisualState.Setters>
+                                            <Setter Target="RootBorder.Opacity" Value="0.4" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <ContentPresenter x:Name="ContentPresenter"
+                                              Content="{TemplateBinding Content}"
+                                              Foreground="{TemplateBinding Foreground}"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Flat skip-back/skip-forward buttons flanking the circle. -->
+        <Style x:Key="TransportIconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Width" Value="52" />
+            <Setter Property="Height" Value="52" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <!-- Bottom icon+label cells on PlayerPage (Chapters / Speed) —
+             transparent, stacked content, matches Lissen's bottom bar. -->
+        <Style x:Key="PlayerBottomBarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+
+        <!-- Label/value metadata row on item detail (AUTHOR/SERIES/…). -->
+        <Style x:Key="MetaLabelTextStyle" TargetType="TextBlock" BasedOn="{StaticResource CaptionTextBlockStyle}">
+            <Setter Property="Opacity" Value="0.6" />
+            <Setter Property="Margin" Value="0,0,0,2" />
+        </Style>
     </Application.Resources>
 
 </Application>

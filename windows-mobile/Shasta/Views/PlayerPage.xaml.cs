@@ -85,11 +85,12 @@ namespace Shasta.Views
             if (chapters.Count > 0)
             {
                 ChaptersPanel.Children.Clear();
+                int number = 1;
                 foreach (AbsChapter chapter in chapters)
                 {
                     Button chapterButton = new Button
                     {
-                        Content = $"{FormatTime(chapter.Start)}  {chapter.Title}",
+                        Content = $"{number}. {chapter.Title}",
                         HorizontalAlignment = HorizontalAlignment.Stretch,
                         HorizontalContentAlignment = HorizontalAlignment.Left,
                         Margin = new Thickness(0, 0, 0, 4),
@@ -97,10 +98,19 @@ namespace Shasta.Views
                     AbsChapter capturedChapter = chapter;
                     chapterButton.Click += (s, e) => PlaybackService.SeekToChapter(capturedChapter);
                     ChaptersPanel.Children.Add(chapterButton);
+                    number++;
                 }
-                ChaptersTitle.Visibility = Visibility.Visible;
-                ChaptersPanel.Visibility = Visibility.Visible;
+                // Present but collapsed until the user taps the bottom
+                // "Chapters" bar button — see ChaptersToggleButton_Click.
+                ChaptersToggleButton.IsEnabled = true;
             }
+        }
+
+        private void ChaptersToggleButton_Click(object sender, RoutedEventArgs e)
+        {
+            bool nowVisible = ChaptersPanel.Visibility != Visibility.Visible;
+            ChaptersTitle.Visibility = nowVisible ? Visibility.Visible : Visibility.Collapsed;
+            ChaptersPanel.Visibility = nowVisible ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void RefreshUi()
@@ -153,6 +163,7 @@ namespace Shasta.Views
                 double.TryParse((string)item.Tag, NumberStyles.Float, CultureInfo.InvariantCulture, out double rate))
             {
                 PlaybackService.SetPlaybackRate(rate);
+                SpeedButtonText.Text = (string)item.Content;
             }
         }
 

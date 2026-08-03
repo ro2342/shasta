@@ -22,7 +22,20 @@
                        Style="{StaticResource SubtitleTextBlockStyle}"
                        Visibility="Collapsed"
                        Margin="0,0,0,12" />
-            <StackPanel x:Name="ContinueListeningPanel" Visibility="Collapsed" />
+            <!-- Horizontal shelf (cover-first cards), not a vertical list —
+                 matches the "Continue Listening"/"Discover" shelf pattern
+                 in the official Audiobookshelf app. Nested inside the
+                 page's own vertical ScrollViewer, so scroll direction is
+                 locked to horizontal here specifically. -->
+            <ScrollViewer x:Name="ContinueListeningScroller"
+                          HorizontalScrollMode="Enabled"
+                          HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollMode="Disabled"
+                          VerticalScrollBarVisibility="Disabled"
+                          Visibility="Collapsed"
+                          Margin="0,0,0,24">
+                <StackPanel x:Name="ContinueListeningPanel" Orientation="Horizontal" />
+            </ScrollViewer>
 
             <TextBlock x:Name="LibrariesTitle"
                        Text="Libraries"

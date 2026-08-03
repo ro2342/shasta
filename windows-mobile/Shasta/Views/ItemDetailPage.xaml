@@ -10,28 +10,108 @@
 
     <ScrollViewer Padding="16,16,16,24">
         <StackPanel>
-            <Image x:Name="CoverImage"
-                   Width="160" Height="160"
-                   Stretch="Uniform"
-                   HorizontalAlignment="Center"
-                   Margin="0,0,0,16" />
+            <!-- Border+ImageBrush (not Image) for rounded corners — see
+                 LibraryService.LoadCoverAsync(Border, ...). -->
+            <Border x:Name="CoverImage"
+                    Width="220" Height="220"
+                    CornerRadius="14"
+                    Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,20" />
 
-            <TextBlock x:Name="TitleText" Style="{StaticResource TitleTextBlockStyle}" TextWrapping="Wrap" Margin="0,0,0,4" />
-            <TextBlock x:Name="AuthorText" Style="{StaticResource BodyTextBlockStyle}" Opacity="0.7" TextWrapping="Wrap" Margin="0,0,0,4" />
-            <TextBlock x:Name="SeriesText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" TextWrapping="Wrap" Visibility="Collapsed" Margin="0,0,0,16" />
+            <TextBlock x:Name="TitleText"
+                       Style="{StaticResource TitleTextBlockStyle}"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,4" />
+            <TextBlock x:Name="AuthorText"
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       Opacity="0.7"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,4" />
+            <TextBlock x:Name="SeriesText"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Opacity="0.7"
+                       TextWrapping="Wrap"
+                       TextAlignment="Center"
+                       HorizontalAlignment="Center"
+                       Visibility="Collapsed"
+                       Margin="0,0,0,20" />
 
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                <Button x:Name="PlayButton" Content="Play" Click="PlayButton_Click" Margin="0,0,8,0" />
-                <Button x:Name="DownloadButton" Content="Download" Click="DownloadButton_Click" />
-            </StackPanel>
+            <!-- Primary "Play" pill + a square icon-only Download button
+                 beside it — mirrors the green Stream button + small
+                 download icon pairing in the official ABS app. -->
+            <Grid Margin="0,0,0,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button x:Name="PlayButton"
+                        Grid.Column="0"
+                        Style="{StaticResource PrimaryPillButtonStyle}"
+                        Click="PlayButton_Click"
+                        Margin="0,0,12,0">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE768;" FontSize="16" Margin="0,0,8,0" />
+                        <TextBlock x:Name="PlayButtonText" Text="Play" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="DownloadButton"
+                        Grid.Column="1"
+                        Style="{StaticResource SecondaryIconButtonStyle}"
+                        Click="DownloadButton_Click">
+                    <FontIcon x:Name="DownloadButtonIcon" Glyph="&#xE896;" FontSize="18" />
+                </Button>
+            </Grid>
             <TextBlock x:Name="DownloadStatusText"
                        Style="{StaticResource CaptionTextBlockStyle}"
                        Opacity="0.7"
                        TextWrapping="Wrap"
                        Visibility="Collapsed"
-                       Margin="0,0,0,16" />
+                       Margin="0,8,0,0" />
+
+            <TextBlock x:Name="ProgressStatusText"
+                       Style="{StaticResource CaptionTextBlockStyle}"
+                       Opacity="0.7"
+                       TextWrapping="Wrap"
+                       Visibility="Collapsed"
+                       Margin="0,8,0,0" />
 
             <Border Style="{StaticResource SectionDividerStyle}" />
+
+            <!-- Label/value metadata rows, like ABS's AUTHOR/SERIES/DURATION
+                 block on item detail — a quick scan strip above the
+                 description instead of the author/series text being the
+                 only structured metadata on screen. -->
+            <StackPanel x:Name="MetaPanel" Margin="0,0,0,20">
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="96" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="AUTHOR" Style="{StaticResource MetaLabelTextStyle}" />
+                    <TextBlock x:Name="MetaAuthorText" Grid.Column="1" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+                </Grid>
+                <Grid x:Name="MetaSeriesRow" Margin="0,0,0,10" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="96" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="SERIES" Style="{StaticResource MetaLabelTextStyle}" />
+                    <TextBlock x:Name="MetaSeriesText" Grid.Column="1" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+                </Grid>
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="96" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="DURATION" Style="{StaticResource MetaLabelTextStyle}" />
+                    <TextBlock x:Name="MetaDurationText" Grid.Column="1" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" />
+                </Grid>
+            </StackPanel>
 
             <TextBlock x:Name="DescriptionText" Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,0,0,16" />
 

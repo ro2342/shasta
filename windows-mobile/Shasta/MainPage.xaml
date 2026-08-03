@@ -179,7 +179,8 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Image x:Name="MiniPlayerCover" Grid.Column="0" Width="40" Height="40" Stretch="UniformToFill" />
+                            <Border x:Name="MiniPlayerCover" Grid.Column="0" Width="40" Height="40" CornerRadius="6"
+                                    Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
                                 <TextBlock x:Name="MiniPlayerTitleText" Style="{StaticResource BodyTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                                 <TextBlock x:Name="MiniPlayerAuthorText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
