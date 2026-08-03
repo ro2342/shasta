@@ -8,12 +8,13 @@
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
-  IgnorableNamespaces="uap mp">
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  IgnorableNamespaces="uap uap3 mp">
 
   <Identity
     Name="ro2342.Shasta"
     Publisher="CN=ro2342-Shasta-SelfSigned"
-    Version="1.0.13.0" />
+    Version="1.0.14.0" />
 
   <mp:PhoneIdentity PhoneProductId="0b7533ef-58c5-428c-a3b5-d0f456524215" PhonePublisherId="00000000-0000-0000-0000-000000000000" />
 
@@ -63,13 +64,17 @@
     <!-- internetClient covers HttpClient use — server login, library/API
          calls, streaming, downloads, and the sideload update checker. -->
     <Capability Name="internetClient" />
-    <!-- OPEN RISK (Phase 4): the single-process MediaPlayer background-
-         audio model (confirmed available at this app's 10.0.14393.0 floor)
-         may or may not need its own capability declared here for playback
-         to survive a locked screen — unconfirmed from documentation in
-         this session. If locked-screen playback stops unexpectedly during
-         the Phase 4 hardware soak test, check whether a capability is
-         missing before assuming it's a code bug. -->
+    <!-- Resolves the previously-flagged open risk: even the modern
+         single-process MediaPlayer model needs this declared, or the OS
+         never registers the app's System Media Transport Controls as an
+         active media session at all — confirmed by a real device never
+         showing a "now playing" title on the volume-button overlay
+         (the same overlay any music/podcast app gets), and by
+         Microsoft's own background-audio documentation. uap3 is the
+         Windows.Foundation.UniversalApiContract version introduced
+         exactly at 10.0.14393.0 (Anniversary Update), so it's available
+         at this app's minimum target with no extra version cost. -->
+    <uap3:Capability Name="backgroundMediaPlayback" />
   </Capabilities>
 
 </Package>
