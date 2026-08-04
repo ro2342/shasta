@@ -83,6 +83,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
             <Button x:Name="MenuButton"
                     Grid.Column="0"
@@ -102,6 +103,12 @@
                        VerticalAlignment="Center"
                        TextTrimming="CharacterEllipsis"
                        Margin="12,0,16,0" />
+            <Button x:Name="SearchButton"
+                    Grid.Column="2"
+                    Click="SearchButton_Click"
+                    Style="{StaticResource HamburgerButtonStyle}">
+                <FontIcon Glyph="&#xE721;" FontSize="18" />
+            </Button>
         </Grid>
 
         <SplitView x:Name="NavSplitView"
@@ -131,6 +138,18 @@
                                      baseline-safe enum members. -->
                                 <SymbolIcon x:Name="NavLibraryIcon" Symbol="Library" />
                                 <TextBlock x:Name="NavLibraryLabel" Text="Library" Margin="20,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="NavSeries" Tag="Series" Click="NavItem_Click" Style="{StaticResource NavRowStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon x:Name="NavSeriesIcon" Glyph="&#xE8C3;" FontSize="16" />
+                                <TextBlock x:Name="NavSeriesLabel" Text="Series" Margin="20,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="NavCollections" Tag="Collections" Click="NavItem_Click" Style="{StaticResource NavRowStyle}">
+                            <StackPanel Orientation="Horizontal">
+                                <FontIcon x:Name="NavCollectionsIcon" Glyph="&#xE8A4;" FontSize="16" />
+                                <TextBlock x:Name="NavCollectionsLabel" Text="Collections" Margin="20,0,0,0" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
                         <Button x:Name="NavDownloads" Tag="Downloads" Click="NavItem_Click" Style="{StaticResource NavRowStyle}">
@@ -192,10 +211,18 @@
                                 <TextBlock x:Name="MiniPlayerTitleText" Foreground="White" Style="{StaticResource BodyTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                                 <TextBlock x:Name="MiniPlayerAuthorText" Foreground="White" Opacity="0.8" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
+                            <!-- Tapped (not just Click) with e.Handled=true
+                                 in code-behind — Tapped bubbles up through
+                                 the visual tree independently of Click, so
+                                 without stopping it here the parent Border's
+                                 MiniPlayerBar_Tapped also fires and
+                                 immediately navigates to PlayerPage on top
+                                 of the play/pause toggle. -->
                             <Button x:Name="MiniPlayerPlayPauseButton"
                                     Grid.Column="2"
                                     Style="{StaticResource FlatIconButtonStyle}"
                                     Click="MiniPlayerPlayPauseButton_Click"
+                                    Tapped="MiniPlayerPlayPauseButton_Tapped"
                                     VerticalAlignment="Center">
                                 <FontIcon x:Name="MiniPlayerPlayPauseIcon" Foreground="White" Glyph="&#xE769;" FontSize="16" />
                             </Button>

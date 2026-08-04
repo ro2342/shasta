@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Shasta.Models;
 using Windows.Data.Json;
@@ -78,6 +79,86 @@ namespace Shasta.Services
                     }
                 }
                 break;
+            }
+            return items;
+        }
+
+        // Whichever library was opened last, or the first one the server
+        // returns — the fallback every "no specific library was handed to
+        // me" screen uses (nav-drawer Library/Series/Collections, Home's
+        // Continue Listening shelf). Centralized here so the resolution
+        // rule can't drift between call sites the way it briefly did
+        // before LibraryPage grew its own copy of this logic.
+        public static async Task<AbsLibrary> ResolveDefaultLibraryAsync()
+        {
+            List<AbsLibrary> libraries = await GetLibrariesAsync();
+            if (libraries.Count == 0)
+            {
+                return null;
+            }
+            AppSettings settings = await LocalDataStore.GetSettingsAsync();
+            return libraries.FirstOrDefault(l => l.Id == settings.LastOpenedLibraryId) ?? libraries[0];
+        }
+
+        public static async Task<List<AbsSeries>> GetSeriesAsync(string libraryId)
+        {
+            // Same "no limit means zero results" trap as /items — see
+            // GetLibraryItemsAsync's comment.
+            IDictionary<string, string> query = new Dictionary<string, string> { ["limit"] = "1000" };
+            JsonObject response = await AbsApiClient.GetJsonAsync($"/api/libraries/{libraryId}/series", query);
+            List<AbsSeries> series = new List<AbsSeries>();
+            foreach (IJsonValue entry in JsonHelpers.GetArrayOrEmpty(response, "results"))
+            {
+                if (entry.ValueType == JsonValueType.Object)
+                {
+                    series.Add(AbsSeries.Parse(entry.GetObject()));
+                }
+            }
+            return series;
+        }
+
+        public static async Task<List<AbsCollection>> GetCollectionsAsync(string libraryId)
+        {
+            IDictionary<string, string> query = new Dictionary<string, string> { ["limit"] = "1000" };
+            JsonObject response = await AbsApiClient.GetJsonAsync($"/api/libraries/{libraryId}/collections", query);
+            List<AbsCollection> collections = new List<AbsCollection>();
+            foreach (IJsonValue entry in JsonHelpers.GetArrayOrEmpty(response, "results"))
+            {
+                if (entry.ValueType == JsonValueType.Object)
+                {
+                    collections.Add(AbsCollection.Parse(entry.GetObject()));
+                }
+            }
+            return collections;
+        }
+
+        // GET /libraries/:id/search?q=...&limit=... — verified against
+        // server/controllers/LibraryController.js + libraryItemsBookFilters.js
+        // on the audiobookshelf GitHub source. Response is
+        // { book: [{ libraryItem: {...} }], narrators, tags, genres,
+        // series, authors } — only the book matches are surfaced here;
+        // matching by author/series/narrator/tag/genre name (rather than
+        // title) is a fast-follow, not needed for a first search pass.
+        public static async Task<List<AbsLibraryItem>> SearchBooksAsync(string libraryId, string query, int limit = 25)
+        {
+            IDictionary<string, string> queryParams = new Dictionary<string, string>
+            {
+                ["q"] = query,
+                ["limit"] = limit.ToString(),
+            };
+            JsonObject response = await AbsApiClient.GetJsonAsync($"/api/libraries/{libraryId}/search", queryParams);
+            List<AbsLibraryItem> items = new List<AbsLibraryItem>();
+            foreach (IJsonValue entry in JsonHelpers.GetArrayOrEmpty(response, "book"))
+            {
+                if (entry.ValueType != JsonValueType.Object)
+                {
+                    continue;
+                }
+                JsonObject libraryItem = JsonHelpers.GetObjectOrNull(entry.GetObject(), "libraryItem");
+                if (libraryItem != null)
+                {
+                    items.Add(AbsLibraryItem.Parse(libraryItem));
+                }
             }
             return items;
         }

@@ -64,6 +64,21 @@
                   IsItemClickEnabled="True"
                   ItemClick="ItemsListView_ItemClick"
                   ContainerContentChanging="ItemsListView_ContainerContentChanging">
+            <!-- Only takes effect when ItemsSource is a grouped
+                 ICollectionView (Author sort) — ignored for a plain flat
+                 list (Title sort), so one GridView covers both without a
+                 XAML-level branch. -->
+            <GridView.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Key}"
+                                       Style="{StaticResource SubtitleTextBlockStyle}"
+                                       Margin="8,20,8,4" />
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </GridView.GroupStyle>
             <GridView.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Width="150" Margin="8">

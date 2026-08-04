@@ -1,0 +1,53 @@
+<Page
+    x:Class="Shasta.Views.ItemGroupPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Shasta.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <!-- Shared by SeriesPage and CollectionsPage for their "tap a series/
+         collection tile" detail view — both already have the full book
+         list from their list fetch (ABS's /series and /collections
+         responses embed `books`), so this page takes items directly via
+         navigation parameter instead of making its own request. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <TextBlock x:Name="GroupTitleText"
+                   Grid.Row="0"
+                   Style="{StaticResource TitleTextBlockStyle}"
+                   Margin="16,16,16,8"
+                   TextTrimming="CharacterEllipsis" />
+
+        <GridView x:Name="ItemsGridView"
+                  Grid.Row="1"
+                  Padding="8,0,8,16"
+                  IsItemClickEnabled="True"
+                  ItemClick="ItemsGridView_ItemClick"
+                  ContainerContentChanging="ItemsGridView_ContainerContentChanging">
+            <GridView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Width="150" Margin="8">
+                        <Border x:Name="CoverImage"
+                                Width="150" Height="150"
+                                Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <TextBlock Text="{Binding Title}"
+                                   Style="{StaticResource BodyTextBlockStyle}"
+                                   TextTrimming="CharacterEllipsis"
+                                   Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding Author}"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Opacity="0.7"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+    </Grid>
+</Page>

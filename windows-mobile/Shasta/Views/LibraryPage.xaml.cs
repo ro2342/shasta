@@ -6,6 +6,7 @@ using Shasta.Models;
 using Shasta.Services;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Data;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 
@@ -44,21 +45,18 @@ namespace Shasta.Views
                 // Reached from the nav-drawer "Library" tab, which has no
                 // specific library to hand over (unlike a library card tap
                 // on Home) — fall back to whichever library was opened
-                // last, or the first one on the server, same resolution
-                // HomePage already uses for its Continue Listening shelf.
+                // last, or the first one on the server.
                 LibraryTitleText.Text = "Library";
                 StatusText.Text = "Loading…";
                 StatusText.Visibility = Visibility.Visible;
                 try
                 {
-                    List<AbsLibrary> libraries = await LibraryService.GetLibrariesAsync();
-                    if (libraries.Count == 0)
+                    _library = await LibraryService.ResolveDefaultLibraryAsync();
+                    if (_library == null)
                     {
                         StatusText.Text = "No libraries found on this server.";
                         return;
                     }
-                    AppSettings settings = await LocalDataStore.GetSettingsAsync();
-                    _library = libraries.FirstOrDefault(l => l.Id == settings.LastOpenedLibraryId) ?? libraries[0];
                 }
                 catch (Exception ex)
                 {
@@ -105,21 +103,41 @@ namespace Shasta.Views
             }
         }
 
-        // No series/author grouping yet (out of MVP scope) — just a
-        // stable, predictable order, switchable via the Sort menu instead
-        // of always defaulting to title.
+        // Title sort is a flat alphabetical list. Author sort groups by
+        // author name with a section header per author (e.g. every C. S.
+        // Lewis book clustered under one "C. S. Lewis" heading) instead of
+        // just reordering rows with no visual separation between authors.
         private void ApplySort()
         {
-            List<LibraryItemRow> rows = _loadedItems
+            IEnumerable<LibraryItemRow> rows = _loadedItems
                 .Select(item => new LibraryItemRow
                 {
                     Id = item.Id,
                     Title = item.GetTitle(),
                     Author = item.GetAuthorDisplay(),
-                })
-                .OrderBy(row => _sortByAuthor ? row.Author : row.Title, StringComparer.CurrentCultureIgnoreCase)
-                .ToList();
-            ItemsListView.ItemsSource = rows;
+                });
+
+            if (_sortByAuthor)
+            {
+                // IGrouping<TKey,TElement> already has the Key+IEnumerable
+                // shape CollectionViewSource(IsSourceGrouped) expects — no
+                // extra wrapper type needed. Sort by title BEFORE grouping
+                // (GroupBy preserves encounter order), not by calling
+                // OrderBy on each group afterward — that would return a
+                // plain IOrderedEnumerable and lose the Key property
+                // CollectionViewSource needs.
+                var grouped = rows
+                    .OrderBy(row => row.Title, StringComparer.CurrentCultureIgnoreCase)
+                    .GroupBy(row => row.Author)
+                    .OrderBy(g => g.Key, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+                CollectionViewSource cvs = new CollectionViewSource { IsSourceGrouped = true, Source = grouped };
+                ItemsListView.ItemsSource = cvs.View;
+            }
+            else
+            {
+                ItemsListView.ItemsSource = rows.OrderBy(row => row.Title, StringComparer.CurrentCultureIgnoreCase).ToList();
+            }
         }
 
         private void SortByTitle_Click(object sender, RoutedEventArgs e)

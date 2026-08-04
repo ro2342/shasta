@@ -114,6 +114,13 @@ namespace Shasta
             }
         }
 
+        // See the Tapped comment on the button in MainPage.xaml — stops
+        // the tap from also bubbling to MiniPlayerBar_Tapped.
+        private void MiniPlayerPlayPauseButton_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            e.Handled = true;
+        }
+
         private async void UiSettings_ColorValuesChanged(UISettings sender, object args)
         {
             // Fires on a background thread — must hop back to the UI thread
@@ -132,6 +139,8 @@ namespace Shasta
         {
             NavHomeLabel.Text = "Home";
             NavLibraryLabel.Text = "Library";
+            NavSeriesLabel.Text = "Series";
+            NavCollectionsLabel.Text = "Collections";
             NavDownloadsLabel.Text = "Downloads";
             NavSettingsLabel.Text = "Settings";
         }
@@ -193,6 +202,15 @@ namespace Shasta
             SetPaneOpen(!NavSplitView.IsPaneOpen);
         }
 
+        // Pushed onto the Frame's back stack like ItemDetailPage/PlayerPage
+        // (a search, not a tab switch) — NavigateToTab would clear the
+        // back stack and strand the user with no way back to whatever tab
+        // they searched from.
+        private void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            ContentFrame.Navigate(typeof(SearchPage));
+        }
+
         private void PaneDismissOverlay_Tapped(object sender, TappedRoutedEventArgs e)
         {
             SetPaneOpen(false);
@@ -215,6 +233,12 @@ namespace Shasta
                     break;
                 case "Library":
                     pageType = typeof(LibraryPage);
+                    break;
+                case "Series":
+                    pageType = typeof(SeriesPage);
+                    break;
+                case "Collections":
+                    pageType = typeof(CollectionsPage);
                     break;
                 case "Downloads":
                     pageType = typeof(DownloadsPage);
@@ -250,16 +274,22 @@ namespace Shasta
 
             bool isHome = pageType == typeof(HomePage);
             bool isLibrary = pageType == typeof(LibraryPage);
+            bool isSeries = pageType == typeof(SeriesPage);
+            bool isCollections = pageType == typeof(CollectionsPage);
             bool isDownloads = pageType == typeof(DownloadsPage);
             bool isSettings = pageType == typeof(SettingsPage);
 
             SetTabForeground(NavHomeLabel, NavHomeIcon, isHome, accent);
             SetTabForeground(NavLibraryLabel, NavLibraryIcon, isLibrary, accent);
+            SetTabForeground(NavSeriesLabel, NavSeriesIcon, isSeries, accent);
+            SetTabForeground(NavCollectionsLabel, NavCollectionsIcon, isCollections, accent);
             SetTabForeground(NavDownloadsLabel, NavDownloadsIcon, isDownloads, accent);
             SetTabForeground(NavSettingsLabel, NavSettingsIcon, isSettings, accent);
 
             if (isHome) HeaderTitleText.Text = "Home";
             else if (isLibrary) HeaderTitleText.Text = "Library";
+            else if (isSeries) HeaderTitleText.Text = "Series";
+            else if (isCollections) HeaderTitleText.Text = "Collections";
             else if (isDownloads) HeaderTitleText.Text = "Downloads";
             else if (isSettings) HeaderTitleText.Text = "Settings";
         }

@@ -1,0 +1,74 @@
+<Page
+    x:Class="Shasta.Views.SearchPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Shasta.Views"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="0" Margin="16,16,16,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Button x:Name="BackButton"
+                    Grid.Column="0"
+                    Style="{StaticResource FlatIconButtonStyle}"
+                    Click="BackButton_Click"
+                    Margin="0,0,8,0">
+                <FontIcon Glyph="&#xE72B;" FontSize="18" />
+            </Button>
+            <!-- Fires as the user types — searches the current library
+                 only (same "no cross-library aggregate" scoping the rest
+                 of the app uses), debounced in code-behind so every
+                 keystroke isn't its own request. -->
+            <TextBox x:Name="QueryBox"
+                     Grid.Column="1"
+                     PlaceholderText="Search this library…"
+                     TextChanged="QueryBox_TextChanged"
+                     VerticalAlignment="Center" />
+        </Grid>
+
+        <TextBlock x:Name="StatusText"
+                   Grid.Row="1"
+                   Style="{StaticResource BodyTextBlockStyle}"
+                   Opacity="0.7"
+                   TextWrapping="Wrap"
+                   Margin="16,0,16,16"
+                   VerticalAlignment="Top" />
+
+        <GridView x:Name="ResultsGridView"
+                  Grid.Row="1"
+                  Padding="8,0,8,16"
+                  Visibility="Collapsed"
+                  IsItemClickEnabled="True"
+                  ItemClick="ResultsGridView_ItemClick"
+                  ContainerContentChanging="ResultsGridView_ContainerContentChanging">
+            <GridView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Width="150" Margin="8">
+                        <Border x:Name="CoverImage"
+                                Width="150" Height="150"
+                                Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+                        <TextBlock Text="{Binding Title}"
+                                   Style="{StaticResource BodyTextBlockStyle}"
+                                   TextTrimming="CharacterEllipsis"
+                                   Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding Author}"
+                                   Style="{StaticResource CaptionTextBlockStyle}"
+                                   Opacity="0.7"
+                                   TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+    </Grid>
+</Page>
