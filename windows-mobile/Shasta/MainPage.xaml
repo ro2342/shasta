@@ -166,10 +166,17 @@
                          when something is playing — additive to the shell,
                          no restructuring needed. Hidden while PlayerPage
                          itself is current (see MainPage.xaml.cs) to avoid a
-                         player-inside-a-player. -->
+                         player-inside-a-player. Background is set in code
+                         (StyleMenuButton) to a solid copy of the live
+                         accent color, Groove Music's solid-color Now
+                         Playing bar rather than a translucent chrome fill
+                         — same reason MenuButton's fill is code-set rather
+                         than a ThemeResource (see StyleMenuButton's
+                         comment). Text/icon are a hardcoded white, which
+                         needs no live-tracking since it doesn't depend on
+                         theme or accent. -->
                     <Border x:Name="MiniPlayerBar"
                             VerticalAlignment="Bottom"
-                            Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
                             Padding="12,8"
                             Visibility="Collapsed"
                             Tapped="MiniPlayerBar_Tapped">
@@ -179,14 +186,18 @@
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <Border x:Name="MiniPlayerCover" Grid.Column="0" Width="40" Height="40" CornerRadius="6"
+                            <Border x:Name="MiniPlayerCover" Grid.Column="0" Width="40" Height="40"
                                     Background="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
                             <StackPanel Grid.Column="1" Margin="12,0,12,0" VerticalAlignment="Center">
-                                <TextBlock x:Name="MiniPlayerTitleText" Style="{StaticResource BodyTextBlockStyle}" TextTrimming="CharacterEllipsis" />
-                                <TextBlock x:Name="MiniPlayerAuthorText" Style="{StaticResource CaptionTextBlockStyle}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+                                <TextBlock x:Name="MiniPlayerTitleText" Foreground="White" Style="{StaticResource BodyTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock x:Name="MiniPlayerAuthorText" Foreground="White" Opacity="0.8" Style="{StaticResource CaptionTextBlockStyle}" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
-                            <Button x:Name="MiniPlayerPlayPauseButton" Grid.Column="2" Click="MiniPlayerPlayPauseButton_Click" VerticalAlignment="Center">
-                                <FontIcon x:Name="MiniPlayerPlayPauseIcon" Glyph="&#xE769;" FontSize="16" />
+                            <Button x:Name="MiniPlayerPlayPauseButton"
+                                    Grid.Column="2"
+                                    Style="{StaticResource FlatIconButtonStyle}"
+                                    Click="MiniPlayerPlayPauseButton_Click"
+                                    VerticalAlignment="Center">
+                                <FontIcon x:Name="MiniPlayerPlayPauseIcon" Foreground="White" Glyph="&#xE769;" FontSize="16" />
                             </Button>
                         </Grid>
                     </Border>

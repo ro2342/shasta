@@ -24,6 +24,10 @@ namespace Shasta.Views
         }
 
         private AbsLibrary _library;
+        // Raw fetch, re-projected/re-sorted locally on Sort menu taps — no
+        // extra server round-trip needed just to change the sort key.
+        private List<AbsLibraryItem> _loadedItems = new List<AbsLibraryItem>();
+        private bool _sortByAuthor;
 
         public LibraryPage()
         {
@@ -35,14 +39,35 @@ namespace Shasta.Views
             base.OnNavigatedTo(e);
 
             _library = e.Parameter as AbsLibrary;
-            LibraryTitleText.Text = _library?.Name ?? "Library";
             if (_library == null)
             {
-                StatusText.Text = "No library selected.";
+                // Reached from the nav-drawer "Library" tab, which has no
+                // specific library to hand over (unlike a library card tap
+                // on Home) — fall back to whichever library was opened
+                // last, or the first one on the server, same resolution
+                // HomePage already uses for its Continue Listening shelf.
+                LibraryTitleText.Text = "Library";
+                StatusText.Text = "Loading…";
                 StatusText.Visibility = Visibility.Visible;
-                return;
+                try
+                {
+                    List<AbsLibrary> libraries = await LibraryService.GetLibrariesAsync();
+                    if (libraries.Count == 0)
+                    {
+                        StatusText.Text = "No libraries found on this server.";
+                        return;
+                    }
+                    AppSettings settings = await LocalDataStore.GetSettingsAsync();
+                    _library = libraries.FirstOrDefault(l => l.Id == settings.LastOpenedLibraryId) ?? libraries[0];
+                }
+                catch (Exception ex)
+                {
+                    StatusText.Text = "Couldn't load your libraries: " + ex.Message;
+                    return;
+                }
             }
 
+            LibraryTitleText.Text = _library.Name;
             await RememberLastOpenedLibraryAsync(_library.Id);
             await LoadItemsAsync();
         }
@@ -62,27 +87,14 @@ namespace Shasta.Views
 
             try
             {
-                List<AbsLibraryItem> items = await LibraryService.GetLibraryItemsAsync(_library.Id);
-                if (items.Count == 0)
+                _loadedItems = await LibraryService.GetLibraryItemsAsync(_library.Id);
+                if (_loadedItems.Count == 0)
                 {
                     StatusText.Text = "This library is empty.";
                     return;
                 }
 
-                // Alphabetical by title — no series/author grouping yet
-                // (out of MVP scope), but a stable, predictable order beats
-                // whatever raw order the server happens to return.
-                List<LibraryItemRow> rows = items
-                    .Select(item => new LibraryItemRow
-                    {
-                        Id = item.Id,
-                        Title = item.GetTitle(),
-                        Author = item.GetAuthorDisplay(),
-                    })
-                    .OrderBy(row => row.Title, StringComparer.CurrentCultureIgnoreCase)
-                    .ToList();
-
-                ItemsListView.ItemsSource = rows;
+                ApplySort();
                 ItemsListView.Visibility = Visibility.Visible;
                 StatusText.Visibility = Visibility.Collapsed;
             }
@@ -90,6 +102,43 @@ namespace Shasta.Views
             {
                 StatusText.Text = "Couldn't load this library: " + ex.Message;
                 StatusText.Visibility = Visibility.Visible;
+            }
+        }
+
+        // No series/author grouping yet (out of MVP scope) — just a
+        // stable, predictable order, switchable via the Sort menu instead
+        // of always defaulting to title.
+        private void ApplySort()
+        {
+            List<LibraryItemRow> rows = _loadedItems
+                .Select(item => new LibraryItemRow
+                {
+                    Id = item.Id,
+                    Title = item.GetTitle(),
+                    Author = item.GetAuthorDisplay(),
+                })
+                .OrderBy(row => _sortByAuthor ? row.Author : row.Title, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+            ItemsListView.ItemsSource = rows;
+        }
+
+        private void SortByTitle_Click(object sender, RoutedEventArgs e)
+        {
+            _sortByAuthor = false;
+            SortButtonText.Text = "Title";
+            if (_loadedItems.Count > 0)
+            {
+                ApplySort();
+            }
+        }
+
+        private void SortByAuthor_Click(object sender, RoutedEventArgs e)
+        {
+            _sortByAuthor = true;
+            SortButtonText.Text = "Author";
+            if (_loadedItems.Count > 0)
+            {
+                ApplySort();
             }
         }
 

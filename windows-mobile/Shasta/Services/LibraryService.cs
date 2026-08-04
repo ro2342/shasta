@@ -125,12 +125,15 @@ namespace Shasta.Services
             }
         }
 
-        // Same fetch, but for a Border with CornerRadius — Image has no
-        // CornerRadius property on this runtime, so every rounded cover in
-        // the app (item detail, player, cards, mini-player) is a Border
-        // whose Background is set to an ImageBrush instead of a plain
-        // Image control. Border DOES clip its Background to CornerRadius
-        // on this runtime, unlike arbitrary child content.
+        // Same fetch, but targeting a Border instead of an Image — every
+        // cover in the app (item detail, player, cards, mini-player) uses
+        // a Border with its Background set to an ImageBrush, not a plain
+        // Image control. That's what lets LibraryPage's grid tiles etc.
+        // share one code path regardless of a tile's exact size, and it's
+        // also what would let a cover gain CornerRadius later without
+        // switching element types — Image has no such property, but
+        // Border does (and always has, unlike Control.CornerRadius — see
+        // App.xaml's button styles for why that distinction matters here).
         public static async Task LoadCoverAsync(Border target, string itemId, int? width = null)
         {
             try

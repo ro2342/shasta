@@ -138,11 +138,11 @@ namespace Shasta.Views
                     Margin = new Thickness(0, 0, 12, 0),
                 };
 
+                // Square, no CornerRadius — flat Groove Music look.
                 Border cover = new Border
                 {
                     Width = ContinueListeningCoverSize,
                     Height = ContinueListeningCoverSize,
-                    CornerRadius = new CornerRadius(10),
                     Background = (Brush)Application.Current.Resources["SystemControlBackgroundBaseLowBrush"],
                     Margin = new Thickness(0, 0, 0, 8),
                 };

@@ -9,16 +9,21 @@
           default — just visual grouping reusing UWP's own theme brushes
           (light/dark + the user's accent color come for free).
         -->
+        <!-- Square, flat — no CornerRadius. The whole app follows the
+             flat/square Groove Music look (sharp corners everywhere, solid
+             accent-color fills instead of rounded pills/circles) rather
+             than mixing that with the earlier rounded-corner pass; see
+             the "Erros já vistos" note in wp-apps/07-build-e-ci-cd.md and
+             PrimaryActionButtonStyle's comment below for why sharp corners
+             are also the lower-risk choice on this runtime. -->
         <Style x:Key="CardBorderStyle" TargetType="Border">
             <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" />
-            <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="16" />
             <Setter Property="Margin" Value="0,0,0,16" />
         </Style>
         <Style x:Key="NudgeBorderStyle" TargetType="Border">
             <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundBaseLowBrush}" />
             <Setter Property="BorderThickness" Value="2" />
-            <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="16" />
             <Setter Property="Margin" Value="0,0,0,16" />
         </Style>
@@ -38,164 +43,59 @@
         </Style>
 
         <!--
-          Reference-app polish pass (ABS/Lissen comparison): a filled pill
-          action button for the primary "Play" call to action on item
-          detail.
-
-          IMPORTANT: Control.CornerRadius (the plain settable property on
-          Button/ComboBox/etc., as opposed to Border.CornerRadius) was only
-          added in 10.0.17763.0 (RS5/1809, UniversalApiContract v7) — NOT
-          available at this app's min version, 10.0.14393.0. It compiles
-          fine against the 17763 SDK and would throw a XAML property-not-
-          found error only on real Anniversary Update hardware, the exact
-          same class of bug as SystemControlErrorTextForegroundBrush and
-          ToggleButton.IsChecked elsewhere in this app (see
-          wp-apps/03-design-visual-e-navegacao.md). Every rounded button
-          below therefore uses an explicit ControlTemplate with a Border
-          for the corner radius — Border.CornerRadius has existed since
-          the UWP baseline — same pattern as MainPage.xaml's NavRowStyle.
+          Groove Music-style flat/square action buttons (superseding an
+          earlier rounded-pill/circle pass — see the design-consistency
+          note in wp-apps/03-design-visual-e-navegacao.md). No custom
+          ControlTemplate and no CornerRadius Setter anywhere below: the
+          stock Button chrome on 10.0.14393.0 is already flat and
+          essentially square (this predates the Fluent rounded-corner
+          redesign, which only landed with Control.CornerRadius itself in
+          10.0.17763.0/RS5 — see that lesson in
+          wp-apps/07-build-e-ci-cd.md#erros-já-vistos). Relying on the
+          platform's own default template is simpler AND safer than a
+          hand-rolled one: zero risk of hitting an API that doesn't exist
+          on real Anniversary Update hardware.
         -->
-        <Style x:Key="PrimaryPillButtonStyle" TargetType="Button">
+        <Style x:Key="PrimaryActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{ThemeResource SystemControlHighlightAccentBrush}" />
             <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="0,14" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="RootBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="24">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal" />
-                                    <VisualState x:Name="PointerOver">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.85" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.7" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Disabled">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.4" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                            <ContentPresenter x:Name="ContentPresenter"
-                                              Padding="{TemplateBinding Padding}"
-                                              Content="{TemplateBinding Content}"
-                                              Foreground="{TemplateBinding Foreground}"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <!-- Secondary square icon button next to the pill (Download,
-             overflow) — quiet fill, no border. Same ControlTemplate
-             approach as PrimaryPillButtonStyle, see its comment above. -->
-        <Style x:Key="SecondaryIconButtonStyle" TargetType="Button">
+        <!-- Secondary square icon button next to the primary action
+             (Download, overflow) — quiet fill, no border. -->
+        <Style x:Key="SecondaryActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundBaseLowBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Width" Value="52" />
             <Setter Property="Height" Value="52" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="RootBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="24">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal" />
-                                    <VisualState x:Name="PointerOver">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.85" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.7" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Disabled">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.4" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                            <ContentPresenter x:Name="ContentPresenter"
-                                              Content="{TemplateBinding Content}"
-                                              Foreground="{TemplateBinding Foreground}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <!-- The big circular transport button on PlayerPage. Same
-             ControlTemplate approach, see PrimaryPillButtonStyle's
-             comment above. -->
-        <Style x:Key="CirclePlayButtonStyle" TargetType="Button">
+        <!-- The big square transport button on PlayerPage — Groove Now
+             Playing has no filled play button at all (flat icon row), but
+             a filled accent square keeps play/pause the obvious primary
+             action while staying flat/square like the rest of the app. -->
+        <Style x:Key="BigPlayButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{ThemeResource SystemControlHighlightAccentBrush}" />
             <Setter Property="Foreground" Value="White" />
-            <Setter Property="Width" Value="80" />
-            <Setter Property="Height" Value="80" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Width" Value="72" />
+            <Setter Property="Height" Value="72" />
             <Setter Property="Padding" Value="0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="RootBorder"
-                                Background="{TemplateBinding Background}"
-                                CornerRadius="40">
-                            <VisualStateManager.VisualStateGroups>
-                                <VisualStateGroup x:Name="CommonStates">
-                                    <VisualState x:Name="Normal" />
-                                    <VisualState x:Name="PointerOver">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.85" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Pressed">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.7" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                    <VisualState x:Name="Disabled">
-                                        <VisualState.Setters>
-                                            <Setter Target="RootBorder.Opacity" Value="0.4" />
-                                        </VisualState.Setters>
-                                    </VisualState>
-                                </VisualStateGroup>
-                            </VisualStateManager.VisualStateGroups>
-                            <ContentPresenter x:Name="ContentPresenter"
-                                              Content="{TemplateBinding Content}"
-                                              Foreground="{TemplateBinding Foreground}"
-                                              HorizontalAlignment="Center"
-                                              VerticalAlignment="Center" />
-                        </Border>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
         </Style>
 
-        <!-- Flat skip-back/skip-forward buttons flanking the circle. -->
+        <!-- Flat skip-back/skip-forward buttons flanking the big square —
+             transparent, no fill, matches Groove's plain icon transport
+             row. -->
         <Style x:Key="TransportIconButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
@@ -207,13 +107,24 @@
         </Style>
 
         <!-- Bottom icon+label cells on PlayerPage (Chapters / Speed) —
-             transparent, stacked content, matches Lissen's bottom bar. -->
+             transparent, stacked content. -->
         <Style x:Key="PlayerBottomBarButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="8" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+
+        <!-- General-purpose flat icon(+text) button — header actions like
+             LibraryPage's Sort button. Transparent, no border, relies on
+             the stock template's own Pressed/PointerOver feedback. -->
+        <Style x:Key="FlatIconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
 
         <!-- Label/value metadata row on item detail (AUTHOR/SERIES/…). -->

@@ -10,11 +10,12 @@
 
     <ScrollViewer Padding="16,16,16,24">
         <StackPanel>
-            <!-- Border+ImageBrush (not Image) for rounded corners — see
-                 LibraryService.LoadCoverAsync(Border, ...). -->
+            <!-- Border+ImageBrush (not Image) — see
+                 LibraryService.LoadCoverAsync(Border, ...). Square, no
+                 CornerRadius, matches the flat Groove Music look used
+                 across the app. -->
             <Border x:Name="CoverImage"
                     Width="240" Height="240"
-                    CornerRadius="16"
                     Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
                     HorizontalAlignment="Center"
                     Margin="0,0,0,20" />
@@ -53,10 +54,10 @@
                     </StackPanel>
                 </Button>
                 <Button x:Name="PlayPauseButton"
-                        Style="{StaticResource CirclePlayButtonStyle}"
+                        Style="{StaticResource BigPlayButtonStyle}"
                         Click="PlayPauseButton_Click"
                         Margin="0,0,16,0">
-                    <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="28" />
+                    <FontIcon x:Name="PlayPauseIcon" Glyph="&#xE769;" FontSize="26" />
                 </Button>
                 <Button x:Name="SkipForwardButton"
                         Style="{StaticResource TransportIconButtonStyle}"

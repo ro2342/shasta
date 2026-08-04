@@ -138,12 +138,15 @@ namespace Shasta
 
         // Solid square in the accent color, like News' menu button — has to
         // be applied in code because the system accent color doesn't change
-        // with the theme.
+        // with the theme. Also paints the mini-player bar the same solid
+        // accent, Groove Music's "Now Playing" bar look, for the same
+        // live-tracking reason.
         private void StyleMenuButton()
         {
             SolidColorBrush accent = ThemeHelper.AccentBrush();
             MenuButton.Background = accent;
             MenuButton.Foreground = new SolidColorBrush(Windows.UI.Colors.White);
+            MiniPlayerBar.Background = accent;
         }
 
         private async void MainPage_Loaded(object sender, RoutedEventArgs e)

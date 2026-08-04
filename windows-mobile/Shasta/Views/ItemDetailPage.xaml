@@ -10,11 +10,12 @@
 
     <ScrollViewer Padding="16,16,16,24">
         <StackPanel>
-            <!-- Border+ImageBrush (not Image) for rounded corners — see
-                 LibraryService.LoadCoverAsync(Border, ...). -->
+            <!-- Border+ImageBrush (not Image) — see
+                 LibraryService.LoadCoverAsync(Border, ...). Square, no
+                 CornerRadius, matches the flat Groove Music look used
+                 across the app. -->
             <Border x:Name="CoverImage"
                     Width="220" Height="220"
-                    CornerRadius="14"
                     Background="{ThemeResource SystemControlBackgroundBaseLowBrush}"
                     HorizontalAlignment="Center"
                     Margin="0,0,0,20" />
@@ -41,9 +42,8 @@
                        Visibility="Collapsed"
                        Margin="0,0,0,20" />
 
-            <!-- Primary "Play" pill + a square icon-only Download button
-                 beside it — mirrors the green Stream button + small
-                 download icon pairing in the official ABS app. -->
+            <!-- Primary "Play" action + a square icon-only Download button
+                 beside it — flat accent fill, no rounding. -->
             <Grid Margin="0,0,0,4">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -51,7 +51,7 @@
                 </Grid.ColumnDefinitions>
                 <Button x:Name="PlayButton"
                         Grid.Column="0"
-                        Style="{StaticResource PrimaryPillButtonStyle}"
+                        Style="{StaticResource PrimaryActionButtonStyle}"
                         Click="PlayButton_Click"
                         Margin="0,0,12,0">
                     <StackPanel Orientation="Horizontal">
@@ -61,7 +61,7 @@
                 </Button>
                 <Button x:Name="DownloadButton"
                         Grid.Column="1"
-                        Style="{StaticResource SecondaryIconButtonStyle}"
+                        Style="{StaticResource SecondaryActionButtonStyle}"
                         Click="DownloadButton_Click">
                     <FontIcon x:Name="DownloadButtonIcon" Glyph="&#xE896;" FontSize="18" />
                 </Button>
